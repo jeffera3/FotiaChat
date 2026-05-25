@@ -48,7 +48,6 @@ commands:
     description: FotiaChat主命令
     usage: /fotiachat <reload|help|version>
     aliases: [fc]
-    permission: fotiachat.admin
   announcement:
     description: 公告管理命令
     usage: /announcement <send|broadcast|list|toggle|reload>
@@ -87,6 +86,9 @@ permissions:
     default: true
   fotiachat.color.*:
     description: 允许使用所有聊天颜色
+    default: op
+  fotiachat.color.format:
+    description: 允许在聊天内容中手动使用颜色和格式代码
     default: op
   fotiachat.filter.bypass:
     description: 绕过屏蔽词过滤
@@ -135,4 +137,10 @@ permissions:
     default: op
   fotiachat.command.chatignore:
     description: 允许使用屏蔽玩家命令
+    default: true
+  fotiachat.item.inventory.view:
+    description: 允许查看聊天中展示的背包快照
+    default: true
+  fotiachat.item.enderchest.view:
+    description: 允许查看聊天中展示的末影箱快照
     default: true

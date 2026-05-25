@@ -26,6 +26,7 @@ import java.util.Set;
 public class ChatListener implements Listener {
 
     private static final PlainTextComponentSerializer PLAIN_TEXT = PlainTextComponentSerializer.plainText();
+    private static final String INLINE_COLOR_PERMISSION = "fotiachat.color.format";
 
     private final FotiaChat plugin;
     private final ChannelManager channelManager;
@@ -100,8 +101,14 @@ public class ChatListener implements Listener {
             finalMessage = message;
             formattedMessage = chatFormatter.format(player, finalChannel, originalMessageComponent);
         } else {
+            boolean allowInlineColors = player.hasPermission(INLINE_COLOR_PERMISSION);
+            if (!allowInlineColors) {
+                message = escapeMiniMessageTags(message);
+            }
             message = plugin.getColorManager().applyPlayerColor(player, message);
-            message = LegacyColorConverter.convertToMiniMessage(message);
+            if (allowInlineColors) {
+                message = LegacyColorConverter.convertToMiniMessage(message);
+            }
             finalMessage = message;
             formattedMessage = chatFormatter.format(player, finalChannel, finalMessage);
         }
@@ -135,6 +142,13 @@ public class ChatListener implements Listener {
 
     private boolean shouldPreserveIncomingComponent(Component messageComponent) {
         return messageComponent != null && containsFontStyle(messageComponent);
+    }
+
+    private String escapeMiniMessageTags(String message) {
+        if (message == null || message.isEmpty()) {
+            return message;
+        }
+        return message.replace("\\", "\\\\").replace("<", "\\<");
     }
 
     private boolean containsFontStyle(Component component) {
