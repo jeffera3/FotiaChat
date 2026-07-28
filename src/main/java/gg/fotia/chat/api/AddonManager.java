@@ -41,6 +41,7 @@ public class AddonManager {
             plugin.getLogger().info("没有找到任何Addon");
             return;
         }
+        Arrays.sort(files, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
 
         // 第一步：读取所有Addon信息
         Map<String, File> addonFiles = new HashMap<>();
@@ -50,11 +51,17 @@ public class AddonManager {
             try {
                 AddonInfo info = loadAddonInfo(file);
                 if (info != null) {
+                    if (addonFiles.containsKey(info.getName())) {
+                        plugin.getLogger().warning("检测到重名Addon " + info.getName()
+                                + "，保留 " + addonFiles.get(info.getName()).getName()
+                                + "，跳过 " + file.getName());
+                        continue;
+                    }
                     addonFiles.put(info.getName(), file);
                     addonInfos.put(info.getName(), info);
                 }
-            } catch (Exception e) {
-                plugin.getLogger().warning("无法读取Addon信息: " + file.getName() + " - " + e.getMessage());
+            } catch (Throwable throwable) {
+                plugin.getLogger().warning("无法读取Addon信息: " + file.getName() + " - " + throwable.getMessage());
             }
         }
 
@@ -74,9 +81,8 @@ public class AddonManager {
 
             try {
                 loadAddon(file, info);
-            } catch (Exception e) {
-                plugin.getLogger().severe("加载Addon失败: " + name + " - " + e.getMessage());
-                e.printStackTrace();
+            } catch (Throwable throwable) {
+                plugin.getLogger().severe("加载Addon失败: " + name + " - " + throwable.getMessage());
             }
         }
 
@@ -182,28 +188,28 @@ public class AddonManager {
     private void loadAddon(File file, AddonInfo info) throws Exception {
         plugin.getLogger().info("正在加载Addon: " + info.getName() + " v" + info.getVersion());
 
-        // 创建类加载器
         AddonClassLoader loader = new AddonClassLoader(file, info, getClass().getClassLoader());
-        loaders.put(info.getName(), loader);
-
-        // 加载主类
-        FotiaChatAddon addon = loader.loadAddon();
-
-        // 初始化Addon
-        File dataFolder = new File(addonsFolder, info.getName());
-        addon.init(plugin, info, dataFolder, loader);
-
-        // 启用Addon
         try {
+            FotiaChatAddon addon = loader.loadAddon();
+            File dataFolder = new File(addonsFolder, info.getName());
+            addon.init(plugin, info, dataFolder, loader);
             addon.onEnable();
             addon.setEnabled(true);
+            loaders.put(info.getName(), loader);
             addons.put(info.getName(), addon);
             plugin.getLogger().info("Addon " + info.getName() + " 已启用");
-        } catch (Exception e) {
-            plugin.getLogger().severe("启用Addon失败: " + info.getName() + " - " + e.getMessage());
-            e.printStackTrace();
-            loader.close();
+        } catch (Throwable throwable) {
+            try {
+                loader.close();
+            } catch (Exception closeException) {
+                plugin.getLogger().warning("关闭失败Addon类加载器时出错: " + info.getName());
+            }
             loaders.remove(info.getName());
+            addons.remove(info.getName());
+            if (throwable instanceof Exception exception) {
+                throw exception;
+            }
+            throw new RuntimeException(throwable);
         }
     }
 
@@ -225,18 +231,17 @@ public class AddonManager {
      */
     public void unloadAddon(String name) {
         FotiaChatAddon addon = addons.remove(name);
-        if (addon == null) {
-            return;
+        if (addon != null) {
+            try {
+                addon.onDisable();
+                addon.setEnabled(false);
+                plugin.getLogger().info("Addon " + name + " 已禁用");
+            } catch (Throwable throwable) {
+                plugin.getLogger().severe("禁用Addon失败: " + name + " - " + throwable.getMessage());
+            }
         }
 
-        try {
-            addon.onDisable();
-            addon.setEnabled(false);
-            plugin.getLogger().info("Addon " + name + " 已禁用");
-        } catch (Exception e) {
-            plugin.getLogger().severe("禁用Addon失败: " + name + " - " + e.getMessage());
-        }
-
+        // 即使初始化失败、addons 中没有实例，也必须关闭已创建的类加载器
         AddonClassLoader loader = loaders.remove(name);
         if (loader != null) {
             try {
@@ -255,8 +260,8 @@ public class AddonManager {
             try {
                 addon.onReload();
                 plugin.getLogger().info("Addon " + addon.getName() + " 已重载");
-            } catch (Exception e) {
-                plugin.getLogger().severe("重载Addon失败: " + addon.getName() + " - " + e.getMessage());
+            } catch (Throwable throwable) {
+                plugin.getLogger().severe("重载Addon失败: " + addon.getName() + " - " + throwable.getMessage());
             }
         }
     }

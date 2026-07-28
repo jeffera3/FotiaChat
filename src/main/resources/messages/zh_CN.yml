@@ -62,6 +62,7 @@ privatemsg:
   self: "<!i><red>你不能给自己发送私聊!"
   no-reply-target: "<!i><red>没有可回复的对象!"
   target-offline: "<!i><red>对方已离线!"
+  target-ignoring: "<!i><red>对方已屏蔽你，无法发送私聊!"
   socialspy-enabled: "<!i><green>已开启私聊监听模式!"
   socialspy-disabled: "<!i><yellow>已关闭私聊监听模式!"
   socialspy-format: "<!i><dark_gray>[监听] <gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"

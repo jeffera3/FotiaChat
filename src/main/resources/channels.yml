@@ -4,7 +4,7 @@
 # 2. hover/channel/player/message 可分别设置不同部分的显示文本与悬浮文本
 # 3. click/channel/player/message 可分别设置不同部分的点击事件
 # 4. display 与 text 支持 MiniMessage、{player}、{channel}、{message}、PlaceholderAPI
-# 5. 旧版 hover.enabled + hover.text 与 click.enabled + click.action + click.value 仍然兼容
+# 5. cross-server 控制频道是否参与跨服同步；LOCAL 范围频道始终不会跨服
 
 channels:
   global:
@@ -13,6 +13,7 @@ channels:
     format: "<!i>{channel} {player}<gray>:</gray> {message}"
     shortcut: "!"
     default: true
+    cross-server: true
     hover:
       channel:
         display: "<!i><gray>[<white>公共</white>]</gray>"
@@ -45,6 +46,7 @@ channels:
     shortcut: "#"
     radius: 100
     default: false
+    cross-server: false
     hover:
       channel:
         display: "<!i><gray>[<yellow>本地</yellow>]</gray>"
@@ -69,6 +71,7 @@ channels:
     permission: "fotiachat.channel.admin"
     shortcut: "@"
     default: false
+    cross-server: true
     hover:
       channel:
         display: "<!i><gray>[<red>管理</red>]</gray>"
@@ -93,6 +96,7 @@ channels:
     permission: "fotiachat.channel.help"
     shortcut: "?"
     default: false
+    cross-server: true
     hover:
       channel:
         display: "<!i><gray>[<aqua>求助</aqua>]</gray>"

@@ -2,7 +2,10 @@ package gg.fotia.chat;
 
 import gg.fotia.chat.announcement.AnnouncementManager;
 import gg.fotia.chat.api.AddonManager;
+import gg.fotia.chat.api.ChatPlaceholderProvider;
 import gg.fotia.chat.api.FotiaChatAPI;
+import gg.fotia.chat.api.PublicChatInterceptor;
+import gg.fotia.chat.api.PublicChatInterceptorRegistry;
 import gg.fotia.chat.api.PublicChatObserver;
 import gg.fotia.chat.api.VirtualChatDispatcher;
 import gg.fotia.chat.channel.ChannelManager;
@@ -25,7 +28,9 @@ import gg.fotia.chat.storage.DatabaseManager;
 import gg.fotia.chat.update.UpdateChecker;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class FotiaChat extends JavaPlugin {
@@ -49,6 +54,10 @@ public class FotiaChat extends JavaPlugin {
     private VirtualChatDispatcher virtualChatDispatcher;
     private UpdateChecker updateChecker;
     private final List<PublicChatObserver> publicChatObservers = new CopyOnWriteArrayList<>();
+    private final List<ChatPlaceholderProvider> chatPlaceholderProviders = new CopyOnWriteArrayList<>();
+    private final PublicChatInterceptorRegistry publicChatInterceptors =
+            new PublicChatInterceptorRegistry(exception ->
+                    getLogger().warning("公共聊天拦截器处理失败: " + exception.getMessage()));
 
     @Override
     public void onEnable() {
@@ -184,27 +193,57 @@ public class FotiaChat extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 卸载Addon
-        if (addonManager != null) {
-            addonManager.unloadAddons();
-        }
-        // 停止公告任务
-        if (announcementManager != null) {
-            announcementManager.stopAllTasks();
-        }
-        // 禁用跨服通信
-        if (crossServerManager != null) {
-            crossServerManager.disable();
-        }
-        // 保存禁言数据
-        if (muteManager != null) {
-            muteManager.save();
-        }
-        // 关闭数据库连接
-        if (databaseManager != null) {
-            databaseManager.close();
-        }
+        // 各清理步骤独立隔离：第三方 Addon 抛 Error 也不能阻断数据保存与连接关闭
+        runCleanup("卸载Addon", () -> {
+            if (addonManager != null) {
+                addonManager.unloadAddons();
+            }
+        });
+        runCleanup("清理公共聊天扩展", () -> {
+            publicChatInterceptors.clear();
+            publicChatObservers.clear();
+            chatPlaceholderProviders.clear();
+        });
+        runCleanup("停止公告任务", () -> {
+            if (announcementManager != null) {
+                announcementManager.stopAllTasks();
+            }
+        });
+        runCleanup("禁用跨服通信", () -> {
+            if (crossServerManager != null) {
+                crossServerManager.disable();
+            }
+        });
+        runCleanup("保存禁言数据", () -> {
+            if (muteManager != null) {
+                muteManager.stop();
+            }
+        });
+        runCleanup("保存屏蔽数据", () -> {
+            if (ignoreManager != null) {
+                ignoreManager.stop();
+            }
+        });
+        runCleanup("停止物品展示", () -> {
+            if (itemDisplayManager != null) {
+                itemDisplayManager.stop();
+            }
+        });
+        runCleanup("关闭数据库连接", () -> {
+            if (databaseManager != null) {
+                databaseManager.close();
+            }
+        });
+        instance = null;
         getLogger().info("FotiaChat 已禁用!");
+    }
+
+    private void runCleanup(String action, Runnable cleanup) {
+        try {
+            cleanup.run();
+        } catch (Throwable throwable) {
+            getLogger().severe(action + "失败: " + throwable.getMessage());
+        }
     }
 
     public static FotiaChat getInstance() {
@@ -289,6 +328,48 @@ public class FotiaChat extends JavaPlugin {
         publicChatObservers.remove(observer);
     }
 
+    public void registerPublicChatInterceptor(PublicChatInterceptor interceptor) {
+        publicChatInterceptors.register(interceptor);
+    }
+
+    public void unregisterPublicChatInterceptor(PublicChatInterceptor interceptor) {
+        publicChatInterceptors.unregister(interceptor);
+    }
+
+    public void registerChatPlaceholderProvider(ChatPlaceholderProvider provider) {
+        if (provider != null) {
+            chatPlaceholderProviders.add(provider);
+        }
+    }
+
+    public void unregisterChatPlaceholderProvider(ChatPlaceholderProvider provider) {
+        chatPlaceholderProviders.remove(provider);
+    }
+
+    public Map<String, String> resolveChatPlaceholders(org.bukkit.entity.Player player) {
+        if (player == null || chatPlaceholderProviders.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (ChatPlaceholderProvider provider : chatPlaceholderProviders) {
+            try {
+                Map<String, String> provided = provider.provide(player);
+                if (provided != null) {
+                    resolved.putAll(provided);
+                }
+            } catch (Throwable throwable) {
+                getLogger().warning("聊天占位符提供器处理失败: " + throwable.getMessage());
+            }
+        }
+        return resolved;
+    }
+
+    public boolean interceptPublicChat(org.bukkit.entity.Player sender,
+                                       gg.fotia.chat.channel.Channel channel,
+                                       String plainMessage) {
+        return publicChatInterceptors.intercept(sender, channel, plainMessage);
+    }
+
     public void notifyPublicChatObservers(org.bukkit.entity.Player sender,
                                           gg.fotia.chat.channel.Channel channel,
                                           String plainMessage,
@@ -296,13 +377,15 @@ public class FotiaChat extends JavaPlugin {
         for (PublicChatObserver observer : publicChatObservers) {
             try {
                 observer.onPublicChat(sender, channel, plainMessage, formattedMessage);
-            } catch (Exception exception) {
-                getLogger().warning("通知公聊观察者失败: " + exception.getMessage());
+            } catch (Throwable throwable) {
+                // 观察者来自外部 Addon，Error 也不能拖垮聊天分发
+                getLogger().warning("通知公聊观察者失败: " + throwable.getMessage());
             }
         }
     }
 
     public void reload() {
+        gg.fotia.chat.util.MessageUtil.refreshIntegrationCache();
         configManager.loadConfig();
         messageManager.loadMessages();
         channelManager.loadChannels();

@@ -1,6 +1,7 @@
 package gg.fotia.chat.itemdisplay;
 
 import gg.fotia.chat.FotiaChat;
+import gg.fotia.chat.util.ComponentTextTransformer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -15,24 +16,42 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 鐗╁搧灞曠ず绠＄悊鍣?
  */
 public class ItemDisplayManager {
 
+    // 1.20.5+ 的 ItemMeta#hasItemName/itemName 反射句柄，启动时解析一次并缓存
+    private static final java.lang.reflect.Method HAS_ITEM_NAME_METHOD;
+    private static final java.lang.reflect.Method ITEM_NAME_METHOD;
+
+    static {
+        java.lang.reflect.Method hasItemName = null;
+        java.lang.reflect.Method itemName = null;
+        try {
+            hasItemName = ItemMeta.class.getMethod("hasItemName");
+            itemName = ItemMeta.class.getMethod("itemName");
+        } catch (NoSuchMethodException ignored) {
+            // 旧版本服务端不支持 itemName
+        }
+        HAS_ITEM_NAME_METHOD = hasItemName;
+        ITEM_NAME_METHOD = itemName;
+    }
+
     private final FotiaChat plugin;
     private final MiniMessage miniMessage;
-    private final Map<UUID, ItemSnapshot> snapshots = new ConcurrentHashMap<>();
+    private final SnapshotStore snapshots = new SnapshotStore(1000, 20);
     private ItemDisplayGuiManager guiManager;
     private FileConfiguration itemDisplayConfig;
+    private BukkitTask cleanupTask;
 
     // 閰嶇疆
     private boolean handItemEnabled;
@@ -58,6 +77,7 @@ public class ItemDisplayManager {
     private String enderchestViewPermission;
 
     private int snapshotExpireTime;
+    private int snapshotCleanupInterval;
 
     public ItemDisplayManager(FotiaChat plugin) {
         this.plugin = plugin;
@@ -84,6 +104,12 @@ public class ItemDisplayManager {
 
         // 蹇収杩囨湡鏃堕棿锛堢锛?
         snapshotExpireTime = itemDisplayConfig.getInt("snapshot-expire-time", 300);
+        snapshotCleanupInterval = Math.max(1, itemDisplayConfig.getInt("snapshot-cleanup-interval-seconds", 60));
+        snapshots.configure(
+                itemDisplayConfig.getInt("snapshot-max-total", 1000),
+                itemDisplayConfig.getInt("snapshot-max-per-player", 20),
+                System.currentTimeMillis()
+        );
 
         // 鎵嬫寔鐗╁搧閰嶇疆
         ConfigurationSection handConfig = itemDisplayConfig.getConfigurationSection("hand-item");
@@ -141,18 +167,19 @@ public class ItemDisplayManager {
      */
     public Component processMessage(Player player, String message) {
         if (message == null || message.isEmpty()) {
-            return miniMessage.deserialize(message);
+            return Component.empty();
         }
 
         List<Component> parts = new ArrayList<>();
+        Map<String, Component> resolvedPlaceholders = new HashMap<>();
         String remaining = message;
 
         while (!remaining.isEmpty()) {
-            int handIndex = handItemEnabled && handItemPlaceholder != null ?
+            int handIndex = handItemEnabled && handItemPlaceholder != null && !handItemPlaceholder.isEmpty() ?
                     remaining.indexOf(handItemPlaceholder) : -1;
-            int invIndex = inventoryEnabled && inventoryPlaceholder != null ?
+            int invIndex = inventoryEnabled && inventoryPlaceholder != null && !inventoryPlaceholder.isEmpty() ?
                     remaining.indexOf(inventoryPlaceholder) : -1;
-            int ecIndex = enderchestEnabled && enderchestPlaceholder != null ?
+            int ecIndex = enderchestEnabled && enderchestPlaceholder != null && !enderchestPlaceholder.isEmpty() ?
                     remaining.indexOf(enderchestPlaceholder) : -1;
 
             // 鎵惧埌鏈€杩戠殑鍗犱綅绗?
@@ -188,7 +215,8 @@ public class ItemDisplayManager {
             }
 
             // 澶勭悊鍗犱綅绗?
-            Component itemComponent = processPlaceholder(player, type);
+            Component itemComponent = resolvedPlaceholders.computeIfAbsent(type,
+                    key -> processPlaceholder(player, key));
             parts.add(itemComponent);
 
             // 缁х画澶勭悊鍓╀綑鏂囨湰
@@ -199,6 +227,42 @@ public class ItemDisplayManager {
         Component result = Component.empty();
         for (Component part : parts) {
             result = result.append(part);
+        }
+        return result;
+    }
+
+    /**
+     * 在不扁平化原组件的情况下替换物品占位符。
+     */
+    public Component processComponent(Player player, Component message) {
+        if (message == null) {
+            return Component.empty();
+        }
+        String plainText = PlainTextComponentSerializer.plainText().serialize(message);
+        Component result = message;
+        if (handItemEnabled && handItemPlaceholder != null && !handItemPlaceholder.isEmpty()
+                && plainText.contains(handItemPlaceholder)) {
+            result = ComponentTextTransformer.replaceLiteral(
+                    result,
+                    handItemPlaceholder,
+                    processPlaceholder(player, "hand")
+            );
+        }
+        if (inventoryEnabled && inventoryPlaceholder != null && !inventoryPlaceholder.isEmpty()
+                && plainText.contains(inventoryPlaceholder)) {
+            result = ComponentTextTransformer.replaceLiteral(
+                    result,
+                    inventoryPlaceholder,
+                    processPlaceholder(player, "inventory")
+            );
+        }
+        if (enderchestEnabled && enderchestPlaceholder != null && !enderchestPlaceholder.isEmpty()
+                && plainText.contains(enderchestPlaceholder)) {
+            result = ComponentTextTransformer.replaceLiteral(
+                    result,
+                    enderchestPlaceholder,
+                    processPlaceholder(player, "enderchest")
+            );
         }
         return result;
     }
@@ -246,14 +310,14 @@ public class ItemDisplayManager {
      * 处理 GUI 手持物品展示
      */
     private Component processHandItemGui(Player player, ItemStack item) {
-        UUID snapshotId = createHandItemSnapshot(player, item);
+        ItemSnapshot snapshot = createHandItemSnapshot(player, item);
         Component component = buildHandItemDisplayComponent(item);
 
         if (handItemGuiHover != null && !handItemGuiHover.isEmpty()) {
             component = component.hoverEvent(HoverEvent.showText(buildItemHover(item, handItemGuiHover)));
         }
 
-        return component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshotId));
+        return component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshot.id()));
     }
 
     private Component buildHandItemDisplayComponent(ItemStack item) {
@@ -288,8 +352,8 @@ public class ItemDisplayManager {
         }
 
         // 鍒涘缓蹇収
-        UUID snapshotId = createInventorySnapshot(player);
-        int itemCount = countItems(player.getInventory().getContents());
+        ItemSnapshot snapshot = createInventorySnapshot(player);
+        int itemCount = countItems(snapshot.contents());
 
         String format = inventoryFormat;
         Component component = miniMessage.deserialize(format);
@@ -301,7 +365,7 @@ public class ItemDisplayManager {
         }
 
         // 娣诲姞鐐瑰嚮浜嬩欢锛堣繍琛屽懡浠ゆ煡鐪嬪揩鐓э級
-        component = component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshotId));
+        component = component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshot.id()));
 
         return component;
     }
@@ -315,8 +379,8 @@ public class ItemDisplayManager {
         }
 
         // 鍒涘缓蹇収
-        UUID snapshotId = createEnderchestSnapshot(player);
-        int itemCount = countItems(player.getEnderChest().getContents());
+        ItemSnapshot snapshot = createEnderchestSnapshot(player);
+        int itemCount = countItems(snapshot.contents());
 
         String format = enderchestFormat;
         Component component = miniMessage.deserialize(format);
@@ -328,7 +392,7 @@ public class ItemDisplayManager {
         }
 
         // 娣诲姞鐐瑰嚮浜嬩欢锛堣繍琛屽懡浠ゆ煡鐪嬪揩鐓э級
-        component = component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshotId));
+        component = component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshot.id()));
 
         return component;
     }
@@ -439,11 +503,9 @@ public class ItemDisplayManager {
             }
             // 灏濊瘯浣跨敤 itemName锛?.20.5+ 鐨勭墿鍝佸悕绉扮粍浠讹級
             try {
-                java.lang.reflect.Method hasItemNameMethod = meta.getClass().getMethod("hasItemName");
-                boolean hasItemName = (boolean) hasItemNameMethod.invoke(meta);
-                if (hasItemName) {
-                    java.lang.reflect.Method itemNameMethod = meta.getClass().getMethod("itemName");
-                    return (Component) itemNameMethod.invoke(meta);
+                if (HAS_ITEM_NAME_METHOD != null && ITEM_NAME_METHOD != null
+                        && (boolean) HAS_ITEM_NAME_METHOD.invoke(meta)) {
+                    return (Component) ITEM_NAME_METHOD.invoke(meta);
                 }
             } catch (Exception ignored) {
                 // 鏃х増鏈笉鏀寔 itemName锛屽拷鐣?
@@ -577,7 +639,7 @@ public class ItemDisplayManager {
     /**
      * 创建手持物品快照
      */
-    private UUID createHandItemSnapshot(Player player, ItemStack item) {
+    private ItemSnapshot createHandItemSnapshot(Player player, ItemStack item) {
         UUID id = UUID.randomUUID();
         ItemStack[] contents = new ItemStack[]{item.clone()};
 
@@ -589,10 +651,11 @@ public class ItemDisplayManager {
                 contents,
                 System.currentTimeMillis() + snapshotExpireTime * 1000L
         );
-        snapshots.put(id, snapshot);
-        return id;
+        snapshots.put(snapshot, System.currentTimeMillis());
+        return snapshot;
     }
-    private UUID createInventorySnapshot(Player player) {
+
+    private ItemSnapshot createInventorySnapshot(Player player) {
         UUID id = UUID.randomUUID();
         ItemStack[] contents = player.getInventory().getContents().clone();
         // 娣辨嫹璐?
@@ -610,14 +673,14 @@ public class ItemDisplayManager {
                 contents,
                 System.currentTimeMillis() + snapshotExpireTime * 1000L
         );
-        snapshots.put(id, snapshot);
-        return id;
+        snapshots.put(snapshot, System.currentTimeMillis());
+        return snapshot;
     }
 
     /**
      * 鍒涘缓鏈奖绠卞揩鐓?
      */
-    private UUID createEnderchestSnapshot(Player player) {
+    private ItemSnapshot createEnderchestSnapshot(Player player) {
         UUID id = UUID.randomUUID();
         ItemStack[] contents = player.getEnderChest().getContents().clone();
         // 娣辨嫹璐?
@@ -635,20 +698,15 @@ public class ItemDisplayManager {
                 contents,
                 System.currentTimeMillis() + snapshotExpireTime * 1000L
         );
-        snapshots.put(id, snapshot);
-        return id;
+        snapshots.put(snapshot, System.currentTimeMillis());
+        return snapshot;
     }
 
     /**
      * 鑾峰彇蹇収
      */
     public ItemSnapshot getSnapshot(UUID id) {
-        ItemSnapshot snapshot = snapshots.get(id);
-        if (snapshot != null && snapshot.isExpired()) {
-            snapshots.remove(id);
-            return null;
-        }
-        return snapshot;
+        return snapshots.get(id, System.currentTimeMillis());
     }
 
     /**
@@ -693,10 +751,24 @@ public class ItemDisplayManager {
      * 鍚姩娓呯悊浠诲姟
      */
     private void startCleanupTask() {
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            long now = System.currentTimeMillis();
-            snapshots.entrySet().removeIf(entry -> entry.getValue().expireTime() < now);
-        }, 6000L, 6000L); // 姣?鍒嗛挓娓呯悊涓€娆?
+        if (cleanupTask != null) {
+            cleanupTask.cancel();
+        }
+        long intervalTicks = snapshotCleanupInterval * 20L;
+        cleanupTask = Bukkit.getScheduler().runTaskTimer(
+                plugin,
+                () -> snapshots.cleanup(System.currentTimeMillis()),
+                intervalTicks,
+                intervalTicks
+        );
+    }
+
+    public void stop() {
+        if (cleanupTask != null) {
+            cleanupTask.cancel();
+            cleanupTask = null;
+        }
+        snapshots.clear();
     }
 
     /**
@@ -704,9 +776,12 @@ public class ItemDisplayManager {
      */
     public boolean containsPlaceholder(String message) {
         if (message == null) return false;
-        if (handItemEnabled && handItemPlaceholder != null && message.contains(handItemPlaceholder)) return true;
-        if (inventoryEnabled && inventoryPlaceholder != null && message.contains(inventoryPlaceholder)) return true;
-        if (enderchestEnabled && enderchestPlaceholder != null && message.contains(enderchestPlaceholder)) return true;
+        if (handItemEnabled && handItemPlaceholder != null && !handItemPlaceholder.isEmpty()
+                && message.contains(handItemPlaceholder)) return true;
+        if (inventoryEnabled && inventoryPlaceholder != null && !inventoryPlaceholder.isEmpty()
+                && message.contains(inventoryPlaceholder)) return true;
+        if (enderchestEnabled && enderchestPlaceholder != null && !enderchestPlaceholder.isEmpty()
+                && message.contains(enderchestPlaceholder)) return true;
         return false;
     }
 

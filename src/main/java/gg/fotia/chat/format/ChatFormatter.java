@@ -4,6 +4,7 @@ import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.api.VirtualChatSender;
 import gg.fotia.chat.channel.Channel;
 import gg.fotia.chat.channel.ChannelSegmentConfig;
+import gg.fotia.chat.color.ChatColor;
 import gg.fotia.chat.itemdisplay.ItemDisplayManager;
 import gg.fotia.chat.util.LegacyColorConverter;
 import net.kyori.adventure.text.Component;
@@ -27,6 +28,9 @@ public class ChatFormatter {
     private static final String CHANNEL_MARKER = "__fotia_segment_channel__";
     private static final String PLAYER_MARKER = "__fotia_segment_player__";
     private static final String MESSAGE_MARKER = "__fotia_segment_message__";
+    private static final Pattern CHANNEL_MARKER_PATTERN = Pattern.compile(Pattern.quote(CHANNEL_MARKER));
+    private static final Pattern PLAYER_MARKER_PATTERN = Pattern.compile(Pattern.quote(PLAYER_MARKER));
+    private static final Pattern MESSAGE_MARKER_PATTERN = Pattern.compile(Pattern.quote(MESSAGE_MARKER));
 
     private final FotiaChat plugin;
     private final MiniMessage miniMessage;
@@ -43,7 +47,11 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, String message) {
-        return format(SenderContext.fromPlayer(player), channel, message);
+        return format(playerContext(player), channel, message);
+    }
+
+    public Component format(Player player, Channel channel, String message, ChatColor chatColor) {
+        return format(playerContext(player), channel, message, chatColor);
     }
 
     public Component format(VirtualChatSender sender, Channel channel, String message) {
@@ -51,7 +59,19 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, Component messageComponent) {
-        return format(SenderContext.fromPlayer(player), channel, messageComponent);
+        return format(playerContext(player), channel, messageComponent);
+    }
+
+    public Component format(Player player, Channel channel, Component messageComponent, ChatColor chatColor) {
+        Component safeMessage = messageComponent == null ? Component.empty() : messageComponent;
+        ItemDisplayManager itemDisplayManager = plugin.getItemDisplayManager();
+        if (itemDisplayManager != null) {
+            safeMessage = itemDisplayManager.processComponent(player, safeMessage);
+        }
+        if (chatColor != null) {
+            safeMessage = chatColor.apply(safeMessage, miniMessage);
+        }
+        return format(playerContext(player), channel, safeMessage);
     }
 
     public Component format(VirtualChatSender sender, Channel channel, Component messageComponent) {
@@ -59,12 +79,37 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, String message, Map<String, String> placeholders) {
-        return format(SenderContext.fromPlayer(player).withAdditionalPlaceholders(placeholders), channel, message);
+        Map<String, String> merged = new LinkedHashMap<>(plugin.resolveChatPlaceholders(player));
+        if (placeholders != null) {
+            merged.putAll(placeholders);
+        }
+        return format(SenderContext.fromPlayer(player).withAdditionalPlaceholders(merged), channel, message);
+    }
+
+    private SenderContext playerContext(Player player) {
+        return SenderContext.fromPlayer(player)
+                .withAdditionalPlaceholders(plugin.resolveChatPlaceholders(player));
     }
 
     private Component format(SenderContext sender, Channel channel, String message) {
+        return format(sender, channel, message, null);
+    }
+
+    private Component format(SenderContext sender, Channel channel, String message, ChatColor chatColor) {
         String safeMessage = craftEngineHandler.processImageTags(message);
-        Component messageComponent = buildMessageComponentFromString(sender, safeMessage);
+        ItemDisplayManager itemDisplayManager = plugin.getItemDisplayManager();
+        boolean containsRichPlaceholder = sender.player() != null
+                && itemDisplayManager != null
+                && itemDisplayManager.containsPlaceholder(safeMessage);
+        Component messageComponent;
+        if (chatColor != null && !containsRichPlaceholder) {
+            messageComponent = miniMessage.deserialize(chatColor.apply(safeMessage));
+        } else {
+            messageComponent = buildMessageComponentFromString(sender, safeMessage);
+        }
+        if (chatColor != null && containsRichPlaceholder) {
+            messageComponent = chatColor.apply(messageComponent, miniMessage);
+        }
         return formatInternal(sender, channel, channel.getFormat(), messageComponent);
     }
 
@@ -74,10 +119,7 @@ public class ChatFormatter {
     }
 
     private Component formatInternal(SenderContext sender, Channel channel, String formatTemplate, Component messageComponent) {
-        Component safeMessageComponent = messageComponent == null ? Component.empty() : messageComponent;
-        Component processedMessage = sender.player() == null
-                ? safeMessageComponent
-                : craftEngineHandler.processEmojiComponent(sender.player(), safeMessageComponent);
+        Component processedMessage = messageComponent == null ? Component.empty() : messageComponent;
 
         if (channel.hasSegmentConfigs()) {
             return buildSegmentedComponent(sender, channel, formatTemplate, processedMessage);
@@ -113,18 +155,18 @@ public class ChatFormatter {
         String parsedFormat = parsePlaceholdersRecursively(sender, markedFormat);
         Component result = miniMessage.deserialize(replacePlaceholders(parsedFormat, sender, channel, messagePlainText));
 
-        result = replaceSegmentMarker(result, CHANNEL_MARKER,
+        result = replaceSegmentMarker(result, CHANNEL_MARKER_PATTERN,
                 buildSegmentComponent(sender, channel, channel.getSegmentConfig("channel"), "{channel}", messageComponent, messagePlainText));
-        result = replaceSegmentMarker(result, PLAYER_MARKER,
+        result = replaceSegmentMarker(result, PLAYER_MARKER_PATTERN,
                 buildSegmentComponent(sender, channel, channel.getSegmentConfig("player"), "{player}", messageComponent, messagePlainText));
-        result = replaceSegmentMarker(result, MESSAGE_MARKER,
+        result = replaceSegmentMarker(result, MESSAGE_MARKER_PATTERN,
                 buildSegmentComponent(sender, channel, channel.getSegmentConfig("message"), "{message}", messageComponent, messagePlainText));
         return result;
     }
 
-    private Component replaceSegmentMarker(Component source, String marker, Component replacement) {
+    private Component replaceSegmentMarker(Component source, Pattern markerPattern, Component replacement) {
         return source.replaceText(
-                Pattern.compile(Pattern.quote(marker)),
+                markerPattern,
                 builder -> builder.content("").append(replacement).build()
         );
     }
@@ -344,10 +386,16 @@ public class ChatFormatter {
             if (entry.getKey() == null || entry.getKey().isBlank()) {
                 continue;
             }
-            String token = entry.getKey().startsWith("%") && entry.getKey().endsWith("%")
-                    ? entry.getKey()
-                    : "%" + entry.getKey() + "%";
-            result = result.replace(token, entry.getValue() == null ? "" : entry.getValue());
+            String rawKey = entry.getKey();
+            String normalizedKey = rawKey;
+            if (normalizedKey.startsWith("%") && normalizedKey.endsWith("%") && normalizedKey.length() > 2) {
+                normalizedKey = normalizedKey.substring(1, normalizedKey.length() - 1);
+            } else if (normalizedKey.startsWith("{") && normalizedKey.endsWith("}") && normalizedKey.length() > 2) {
+                normalizedKey = normalizedKey.substring(1, normalizedKey.length() - 1);
+            }
+            String value = entry.getValue() == null ? "" : entry.getValue();
+            result = result.replace("%" + normalizedKey + "%", value)
+                    .replace("{" + normalizedKey + "}", value);
         }
         return result;
     }
@@ -409,7 +457,8 @@ public class ChatFormatter {
                     player,
                     player.getUniqueId(),
                     player.getName(),
-                    player.getName(),
+                    // 使用真实显示名（昵称插件设置的 displayName），而不是原始用户名
+                    PlainTextComponentSerializer.plainText().serialize(player.displayName()),
                     player.getLocation(),
                     Map.of()
             );

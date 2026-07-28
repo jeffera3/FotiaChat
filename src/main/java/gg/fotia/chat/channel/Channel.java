@@ -20,6 +20,7 @@ public class Channel {
     private final String shortcut;
     private final int radius;
     private final boolean isDefault;
+    private final boolean crossServer;
 
     private final boolean hoverEnabled;
     private final List<String> hoverText;
@@ -31,6 +32,7 @@ public class Channel {
 
     public Channel(String id, String name, ChannelType type, String format,
                    String permission, String shortcut, int radius, boolean isDefault,
+                   boolean crossServer,
                    boolean hoverEnabled, List<String> hoverText,
                    boolean clickEnabled, ClickEvent.Action clickAction, String clickValue,
                    Map<String, ChannelSegmentConfig> segmentConfigs) {
@@ -42,6 +44,7 @@ public class Channel {
         this.shortcut = shortcut;
         this.radius = radius;
         this.isDefault = isDefault;
+        this.crossServer = crossServer;
         this.hoverEnabled = hoverEnabled;
         this.hoverText = hoverText == null ? List.of() : List.copyOf(hoverText);
         this.clickEnabled = clickEnabled;
@@ -53,7 +56,7 @@ public class Channel {
     public Channel(String id, String name, ChannelType type, String format,
                    String permission, String shortcut, int radius, boolean isDefault) {
         this(id, name, type, format, permission, shortcut, radius, isDefault,
-                false, List.of(), false, ClickEvent.Action.SUGGEST_COMMAND, "", Map.of());
+                true, false, List.of(), false, ClickEvent.Action.SUGGEST_COMMAND, "", Map.of());
     }
 
     public String getId() {
@@ -125,6 +128,13 @@ public class Channel {
 
     public boolean isLocalChannel() {
         return type == ChannelType.LOCAL && radius > 0;
+    }
+
+    /**
+     * 该频道是否参与跨服转发：本地/范围频道永远不跨服（距离语义无法跨服成立）。
+     */
+    public boolean isCrossServerEnabled() {
+        return crossServer && !isLocalChannel();
     }
 
     private Map<String, ChannelSegmentConfig> normalizeSegmentConfigs(Map<String, ChannelSegmentConfig> source) {

@@ -67,8 +67,9 @@ public class ItemDisplayGuiManager {
     public void openHandItemGui(Player viewer, ItemSnapshot snapshot) {
         String title = resolveTitle(handTitle, snapshot);
         int size = Math.max(9, handLayout.size() * 9);
-        Inventory gui = Bukkit.createInventory(new ItemDisplayHolder(snapshot.id()), size,
-                miniMessage.deserialize(title));
+        ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
+        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        holder.setInventory(gui);
 
         fillInventoryFromLayout(gui, handLayout, handIcons, snapshot.contents());
         viewer.openInventory(gui);
@@ -77,8 +78,9 @@ public class ItemDisplayGuiManager {
     public void openInventoryGui(Player viewer, ItemSnapshot snapshot) {
         String title = resolveTitle(invTitle, snapshot);
         int size = invLayout.size() * 9;
-        Inventory gui = Bukkit.createInventory(new ItemDisplayHolder(snapshot.id()), size,
-                miniMessage.deserialize(title));
+        ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
+        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        holder.setInventory(gui);
 
         fillInventoryFromLayout(gui, invLayout, invIcons, snapshot.contents());
         viewer.openInventory(gui);
@@ -87,8 +89,9 @@ public class ItemDisplayGuiManager {
     public void openEnderchestGui(Player viewer, ItemSnapshot snapshot) {
         String title = resolveTitle(ecTitle, snapshot);
         int size = ecLayout.size() * 9;
-        Inventory gui = Bukkit.createInventory(new ItemDisplayHolder(snapshot.id()), size,
-                miniMessage.deserialize(title));
+        ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
+        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        holder.setInventory(gui);
 
         fillInventoryFromLayout(gui, ecLayout, ecIcons, snapshot.contents());
         viewer.openInventory(gui);
@@ -252,6 +255,7 @@ public class ItemDisplayGuiManager {
 
     public static class ItemDisplayHolder implements org.bukkit.inventory.InventoryHolder {
         private final UUID snapshotId;
+        private Inventory inventory;
 
         public ItemDisplayHolder(UUID snapshotId) {
             this.snapshotId = snapshotId;
@@ -261,9 +265,13 @@ public class ItemDisplayGuiManager {
             return snapshotId;
         }
 
+        private void setInventory(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
         @Override
         public Inventory getInventory() {
-            return null;
+            return inventory;
         }
     }
 }

@@ -2,189 +2,216 @@ package gg.fotia.chat.crossserver;
 
 import gg.fotia.chat.FotiaChat;
 import org.bukkit.Bukkit;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisPubSub;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Redis消息处理器
- * 注意: 需要添加Redis依赖才能使用完整功能
- * 当前为占位实现，实际使用需要引入Jedis或Lettuce
+ * Redis 发布/订阅跨服消息处理器。
  */
 public class RedisHandler {
 
+    private static final long RECONNECT_DELAY_MILLIS = 5_000L;
+
     private final FotiaChat plugin;
     private final CrossServerManager manager;
-    private Consumer<CrossServerMessage> messageHandler;
-    private boolean enabled = false;
+    private volatile Consumer<CrossServerMessage> messageHandler;
+    private volatile boolean enabled;
+    private volatile boolean running;
+    private volatile Jedis subscriberJedis;
+    private volatile JedisPubSub subscription;
 
-    private String host;
-    private int port;
-    private String password;
     private String channelName;
-
-    private ExecutorService executor;
-    private volatile boolean running = false;
-
-    // Redis连接相关 (需要Jedis依赖)
-    // private JedisPool jedisPool;
-    // private Jedis subscriberJedis;
+    private JedisPool jedisPool;
+    private ExecutorService subscriberExecutor;
+    private ExecutorService publisherExecutor;
 
     public RedisHandler(FotiaChat plugin, CrossServerManager manager) {
         this.plugin = plugin;
         this.manager = manager;
     }
 
-    /**
-     * 启用Redis通信
-     */
-    public void enable(String host, int port, String password) {
+    public synchronized void enable(String host, int port, String password, String channelName) {
         if (enabled) return;
 
-        this.host = host;
-        this.port = port;
-        this.password = password;
-        this.channelName = "fotiachat:messages";
+        this.channelName = channelName == null || channelName.isBlank()
+                ? "fotiachat:messages"
+                : channelName.trim();
 
         try {
-            // 检查Redis依赖是否可用
-            Class.forName("redis.clients.jedis.Jedis");
+            JedisPoolConfig poolConfig = new JedisPoolConfig();
+            poolConfig.setMaxTotal(10);
+            poolConfig.setMaxIdle(5);
+            poolConfig.setMinIdle(1);
+            poolConfig.setTestOnBorrow(true);
+            poolConfig.setMaxWait(Duration.ofSeconds(2));
 
-            // 初始化连接池
-            initializeRedis();
+            String safePassword = password == null ? "" : password;
+            if (safePassword.isBlank()) {
+                jedisPool = new JedisPool(poolConfig, host, port, 2_000);
+            } else {
+                jedisPool = new JedisPool(poolConfig, host, port, 2_000, safePassword);
+            }
 
-            // 启动订阅线程
-            startSubscriber();
+            // 启动时验证配置，避免“已启用”但永远连不上。
+            try (Jedis jedis = jedisPool.getResource()) {
+                if (!"PONG".equalsIgnoreCase(jedis.ping())) {
+                    throw new IllegalStateException("Redis PING 未返回 PONG");
+                }
+            }
 
+            subscriberExecutor = Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "FotiaChat-Redis-Subscriber");
+                thread.setDaemon(true);
+                return thread;
+            });
+            publisherExecutor = Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "FotiaChat-Redis-Publisher");
+                thread.setDaemon(true);
+                return thread;
+            });
+
+            running = true;
             enabled = true;
-            plugin.getLogger().info("Redis跨服通信已启用 (" + host + ":" + port + ")");
-        } catch (ClassNotFoundException e) {
-            plugin.getLogger().warning("Redis依赖未找到，跨服通信功能不可用");
-            plugin.getLogger().warning("请在pom.xml中添加Jedis依赖");
-            enabled = false;
-        } catch (Exception e) {
-            plugin.getLogger().severe("Redis连接失败: " + e.getMessage());
-            enabled = false;
+            subscriberExecutor.submit(this::subscribeLoop);
+            plugin.getLogger().info("Redis跨服通信已启用 (" + host + ":" + port
+                    + ", channel=" + this.channelName + ")");
+        } catch (Throwable throwable) {
+            plugin.getLogger().severe("Redis连接失败: " + throwable.getMessage());
+            closeResources();
         }
     }
 
-    /**
-     * 初始化Redis连接
-     */
-    private void initializeRedis() {
-        // 实际实现需要Jedis依赖
-        // JedisPoolConfig config = new JedisPoolConfig();
-        // config.setMaxTotal(10);
-        // config.setMaxIdle(5);
-        // if (password != null && !password.isEmpty()) {
-        //     jedisPool = new JedisPool(config, host, port, 2000, password);
-        // } else {
-        //     jedisPool = new JedisPool(config, host, port);
-        // }
-    }
-
-    /**
-     * 启动订阅线程
-     */
-    private void startSubscriber() {
-        if (executor != null) {
-            executor.shutdownNow();
-        }
-
-        executor = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "FotiaChat-Redis-Subscriber");
-            t.setDaemon(true);
-            return t;
-        });
-
-        running = true;
-        executor.submit(this::subscribeLoop);
-    }
-
-    /**
-     * 订阅循环
-     */
     private void subscribeLoop() {
-        // 实际实现需要Jedis依赖
-        // while (running) {
-        //     try {
-        //         subscriberJedis = jedisPool.getResource();
-        //         subscriberJedis.subscribe(new JedisPubSub() {
-        //             @Override
-        //             public void onMessage(String channel, String message) {
-        //                 handleMessage(message);
-        //             }
-        //         }, channelName);
-        //     } catch (Exception e) {
-        //         if (running) {
-        //             plugin.getLogger().warning("Redis订阅断开，5秒后重连...");
-        //             try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
-        //         }
-        //     }
-        // }
-    }
-
-    /**
-     * 处理接收到的消息
-     */
-    private void handleMessage(String data) {
-        CrossServerMessage message = CrossServerMessage.deserialize(data);
-        if (message != null && messageHandler != null) {
-            // 忽略来自本服务器的消息
-            if (!message.getServerName().equals(manager.getServerName())) {
-                Bukkit.getScheduler().runTask(plugin, () -> messageHandler.accept(message));
+        while (running) {
+            try (Jedis jedis = jedisPool.getResource()) {
+                subscriberJedis = jedis;
+                JedisPubSub pubSub = new JedisPubSub() {
+                    @Override
+                    public void onMessage(String channel, String data) {
+                        if (channelName.equals(channel)) {
+                            handleMessage(data);
+                        }
+                    }
+                };
+                subscription = pubSub;
+                jedis.subscribe(pubSub, channelName);
+            } catch (Throwable throwable) {
+                if (running) {
+                    plugin.getLogger().warning("Redis订阅断开: " + throwable.getMessage()
+                            + "，5秒后重连");
+                    try {
+                        Thread.sleep(RECONNECT_DELAY_MILLIS);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            } finally {
+                subscription = null;
+                subscriberJedis = null;
             }
         }
     }
 
-    /**
-     * 禁用Redis通信
-     */
-    public void disable() {
-        if (!enabled) return;
-
-        running = false;
-
-        if (executor != null) {
-            executor.shutdownNow();
-            executor = null;
+    private void handleMessage(String data) {
+        CrossServerMessage message = CrossServerMessage.deserialize(data);
+        Consumer<CrossServerMessage> handler = messageHandler;
+        if (message == null || handler == null) {
+            if (message == null && plugin.getConfigManager().isDebugMode()) {
+                plugin.getLogger().warning("[Debug] 丢弃无法解析的Redis跨服消息");
+            }
+            return;
         }
-
-        // 关闭连接
-        // if (subscriberJedis != null) {
-        //     subscriberJedis.close();
-        // }
-        // if (jedisPool != null) {
-        //     jedisPool.close();
-        // }
-
-        enabled = false;
-        plugin.getLogger().info("Redis跨服通信已禁用");
+        if (message.getServerName().equals(manager.getServerName())) {
+            return;
+        }
+        try {
+            Bukkit.getScheduler().runTask(plugin, () -> handler.accept(message));
+        } catch (RuntimeException exception) {
+            if (running) {
+                plugin.getLogger().warning("调度Redis跨服消息失败: " + exception.getMessage());
+            }
+        }
     }
 
-    /**
-     * 发送跨服消息
-     */
     public void sendMessage(CrossServerMessage message) {
-        if (!enabled) return;
+        ExecutorService executor = publisherExecutor;
+        if (!enabled || executor == null || message == null) return;
 
-        // 实际实现需要Jedis依赖
-        // try (Jedis jedis = jedisPool.getResource()) {
-        //     jedis.publish(channelName, message.serialize());
-        // } catch (Exception e) {
-        //     plugin.getLogger().severe("发送Redis消息失败: " + e.getMessage());
-        // }
-
-        // 占位日志
-        if (plugin.getConfigManager().isDebugMode()) {
-            plugin.getLogger().info("[Debug] Redis消息发送: " + message.getType());
+        String serialized = message.serialize();
+        try {
+            executor.submit(() -> {
+                try (Jedis jedis = jedisPool.getResource()) {
+                    jedis.publish(channelName, serialized);
+                } catch (Throwable throwable) {
+                    if (running) {
+                        plugin.getLogger().warning("发送Redis消息失败: " + throwable.getMessage());
+                    }
+                }
+            });
+        } catch (RuntimeException exception) {
+            if (running) {
+                plugin.getLogger().warning("Redis发布任务被拒绝: " + exception.getMessage());
+            }
         }
     }
 
-    /**
-     * 设置消息处理器
-     */
+    public synchronized void disable() {
+        boolean wasActive = enabled || running || jedisPool != null;
+        closeResources();
+        if (wasActive) {
+            plugin.getLogger().info("Redis跨服通信已禁用");
+        }
+    }
+
+    private void closeResources() {
+        running = false;
+        enabled = false;
+
+        JedisPubSub currentSubscription = subscription;
+        if (currentSubscription != null) {
+            try {
+                currentSubscription.unsubscribe();
+            } catch (RuntimeException ignored) {
+            }
+        }
+        Jedis currentSubscriber = subscriberJedis;
+        if (currentSubscriber != null) {
+            try {
+                currentSubscriber.close();
+            } catch (RuntimeException ignored) {
+            }
+        }
+
+        shutdownExecutor(publisherExecutor);
+        shutdownExecutor(subscriberExecutor);
+        publisherExecutor = null;
+        subscriberExecutor = null;
+
+        if (jedisPool != null) {
+            jedisPool.close();
+            jedisPool = null;
+        }
+    }
+
+    private void shutdownExecutor(ExecutorService executor) {
+        if (executor == null) return;
+        executor.shutdownNow();
+        try {
+            executor.awaitTermination(2, TimeUnit.SECONDS);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public void setMessageHandler(Consumer<CrossServerMessage> handler) {
         this.messageHandler = handler;
     }

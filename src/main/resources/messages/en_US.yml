@@ -62,6 +62,7 @@ privatemsg:
   self: "<!i><red>You cannot send a private message to yourself!"
   no-reply-target: "<!i><red>No one to reply to!"
   target-offline: "<!i><red>Target player is offline!"
+  target-ignoring: "<!i><red>This player is ignoring you, message not sent!"
   socialspy-enabled: "<!i><green>Social spy mode enabled!"
   socialspy-disabled: "<!i><yellow>Social spy mode disabled!"
   socialspy-format: "<!i><dark_gray>[Spy] <gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"
@@ -111,3 +112,12 @@ item-display:
   snapshot-expired: "<!i><red>This snapshot has expired!"
   inventory-title: "<!i>{player}'s Inventory"
   enderchest-title: "<!i>{player}'s Enderchest"
+
+# Ignore related messages
+ignore:
+  added: "<!i><green>You are now ignoring chat messages from {player}!"
+  removed: "<!i><yellow>You are no longer ignoring {player}!"
+  self: "<!i><red>You cannot ignore yourself!"
+  list-header: "<!i><gray>========== Ignored Players =========="
+  list-item: "<!i><gray>- <white>{player}</white>"
+  list-empty: "<!i><yellow>You are not ignoring any players!"

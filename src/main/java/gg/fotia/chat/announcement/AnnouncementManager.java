@@ -34,6 +34,7 @@ public class AnnouncementManager {
 
     private boolean enabled;
     private boolean random;
+    private final Random randomSource = new Random();
 
     public AnnouncementManager(FotiaChat plugin) {
         this.plugin = plugin;
@@ -89,6 +90,15 @@ public class AnnouncementManager {
         String sound = section.getString("sound", "");
         float soundVolume = (float) section.getDouble("sound-volume", 1.0);
         float soundPitch = (float) section.getDouble("sound-pitch", 1.0);
+
+        if (sound != null && !sound.isBlank()) {
+            try {
+                Sound.valueOf(sound.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("公告 " + id + " 的音效不存在: " + sound);
+                sound = "";
+            }
+        }
 
         // 加载Hover配置
         boolean hoverEnabled = false;
@@ -167,46 +177,102 @@ public class AnnouncementManager {
 
         long intervalTicks = announcement.getInterval() * 20L;
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            broadcast(announcement);
+            broadcastNext(announcement);
         }, intervalTicks, intervalTicks);
 
         tasks.put(announcement.getId(), task);
     }
 
     /**
-     * 广播公告
+     * 自动任务按 random/顺序轮播选择单条公告文本。
+     */
+    private void broadcastNext(Announcement announcement) {
+        if (announcement.getMessages().isEmpty()) {
+            return;
+        }
+        broadcastLines(announcement, List.of(getNextMessage(announcement)));
+    }
+
+    /**
+     * 手动发送保留“发送该公告全部消息行”的原有语义。
      */
     public void broadcast(Announcement announcement) {
         if (announcement.getMessages().isEmpty()) {
             return;
         }
+        broadcastLines(announcement, announcement.getMessages());
+    }
 
-        // 获取目标玩家
+    private void broadcastLines(Announcement announcement, List<String> lines) {
         Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+        boolean playerSpecific = containsPlayerPlaceholder(lines)
+                || containsPlayerPlaceholder(announcement.getHoverText())
+                || containsPlayerPlaceholder(announcement.getClickValue());
+        List<Component> sharedComponents = playerSpecific ? List.of() : buildSharedComponents(announcement, lines);
+
+        Sound sound = null;
+        if (announcement.hasSound()) {
+            try {
+                sound = Sound.valueOf(announcement.getSound().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                return;
+            }
+        }
+
         for (Player player : players) {
-            // 检查权限
             if (announcement.hasPermission() && !player.hasPermission(announcement.getPermission())) {
                 continue;
             }
-
-            // 发送所有消息行
-            for (String message : announcement.getMessages()) {
-                // 构建消息组件
-                Component component = buildAnnouncementComponent(announcement, message, player);
-                // 发送消息
-                player.sendMessage(component);
-            }
-
-            // 播放音效
-            if (announcement.hasSound()) {
-                try {
-                    Sound sound = Sound.valueOf(announcement.getSound().toUpperCase());
-                    player.playSound(player.getLocation(), sound,
-                            announcement.getSoundVolume(), announcement.getSoundPitch());
-                } catch (Exception ignored) {
+            if (playerSpecific) {
+                for (String line : lines) {
+                    player.sendMessage(buildAnnouncementComponent(announcement, line, player));
+                }
+            } else {
+                for (Component component : sharedComponents) {
+                    player.sendMessage(component);
                 }
             }
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound,
+                        announcement.getSoundVolume(), announcement.getSoundPitch());
+            }
         }
+    }
+
+    private boolean containsPlayerPlaceholder(Collection<String> values) {
+        for (String value : values) {
+            if (containsPlayerPlaceholder(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsPlayerPlaceholder(String value) {
+        return value != null && value.contains("%");
+    }
+
+    private List<Component> buildSharedComponents(Announcement announcement, List<String> lines) {
+        List<Component> components = new ArrayList<>(lines.size());
+        for (String line : lines) {
+            Component component = miniMessage.deserialize(line);
+            if (announcement.isHoverEnabled() && !announcement.getHoverText().isEmpty()) {
+                Component hover = Component.empty();
+                for (int index = 0; index < announcement.getHoverText().size(); index++) {
+                    if (index > 0) {
+                        hover = hover.append(Component.newline());
+                    }
+                    hover = hover.append(miniMessage.deserialize(announcement.getHoverText().get(index)));
+                }
+                component = component.hoverEvent(HoverEvent.showText(hover));
+            }
+            if (announcement.isClickEnabled() && !announcement.getClickValue().isEmpty()) {
+                component = component.clickEvent(ClickEvent.clickEvent(
+                        announcement.getClickAction(), announcement.getClickValue()));
+            }
+            components.add(component);
+        }
+        return List.copyOf(components);
     }
 
     /**
@@ -265,7 +331,7 @@ public class AnnouncementManager {
         }
 
         if (random) {
-            return messages.get(new Random().nextInt(messages.size()));
+            return messages.get(randomSource.nextInt(messages.size()));
         }
 
         // 顺序播放

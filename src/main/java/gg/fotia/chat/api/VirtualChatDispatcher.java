@@ -38,8 +38,22 @@ public class VirtualChatDispatcher {
         if (finalMessage.isEmpty()) {
             return false;
         }
+        if (!Bukkit.isPrimaryThread()) {
+            String queuedMessage = finalMessage;
+            try {
+                Bukkit.getScheduler().runTask(plugin,
+                        () -> dispatchPublicChat(sender, channelId, queuedMessage));
+                return true;
+            } catch (IllegalStateException exception) {
+                plugin.getLogger().warning("无法提交虚拟聊天主线程任务: " + exception.getMessage());
+                return false;
+            }
+        }
 
         Channel channel = resolveChannel(channelId);
+        if (channel == null) {
+            return false;
+        }
         if (!sender.isBypassFilter()) {
             String filtered = plugin.getFilterManager().filter(finalMessage);
             if (filtered == null || filtered.trim().isEmpty()) {
@@ -50,15 +64,20 @@ public class VirtualChatDispatcher {
 
         Component formattedMessage = plugin.getChatFormatter().format(sender, channel, finalMessage);
         for (Player recipient : collectRecipients(sender, channel)) {
-            if (!ignoreManager.isIgnoring(recipient.getUniqueId(), sender.getUniqueId())) {
+            if (plugin.getChannelManager().hasChannelPermission(recipient, channel)
+                    && !ignoreManager.isIgnoring(recipient.getUniqueId(), sender.getUniqueId())) {
                 recipient.sendMessage(formattedMessage);
             }
         }
 
         Bukkit.getConsoleSender().sendMessage(formattedMessage);
 
-        if (plugin.getCrossServerManager().isEnabled()) {
-            plugin.getCrossServerManager().sendFormattedChatMessage(channel, MessageUtil.toMiniMessage(formattedMessage));
+        if (plugin.getCrossServerManager().isEnabled() && channel.isCrossServerEnabled()) {
+            plugin.getCrossServerManager().sendFormattedChatMessage(
+                    channel,
+                    MessageUtil.toMiniMessage(formattedMessage),
+                    sender.getUniqueId()
+            );
         }
         return true;
     }
@@ -84,8 +103,10 @@ public class VirtualChatDispatcher {
         }
 
         Set<Player> recipients = new HashSet<>();
+        double radiusSquared = (double) channel.getRadius() * channel.getRadius();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld().equals(source.getWorld()) && player.getLocation().distance(source) <= channel.getRadius()) {
+            if (player.getWorld().equals(source.getWorld())
+                    && player.getLocation().distanceSquared(source) <= radiusSquared) {
                 recipients.add(player);
             }
         }

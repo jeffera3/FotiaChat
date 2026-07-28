@@ -31,9 +31,19 @@ public class PlayerListener implements Listener {
         // 从数据库加载玩家数据
         DatabaseManager dbManager = plugin.getDatabaseManager();
         if (dbManager != null && dbManager.isEnabled()) {
+            // 在事件线程先取好默认频道，避免异步窗口撞上 reload 导致 NPE
+            gg.fotia.chat.channel.Channel defaultChannel = plugin.getChannelManager().getDefaultChannel();
+            String defaultChannelId = defaultChannel != null ? defaultChannel.getId() : "global";
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 DatabaseManager.PlayerData data = dbManager.loadPlayerData(player.getUniqueId());
                 if (data != null) {
+                    // 老玩家：同步刷新用户名与 last_seen（玩家可能已改名）
+                    dbManager.savePlayerData(
+                            player.getUniqueId(),
+                            player.getName(),
+                            data.channelId() != null ? data.channelId() : defaultChannelId,
+                            data.colorId()
+                    );
                     // 在主线程应用数据
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (player.isOnline()) {
@@ -52,7 +62,7 @@ public class PlayerListener implements Listener {
                     dbManager.savePlayerData(
                             player.getUniqueId(),
                             player.getName(),
-                            plugin.getChannelManager().getDefaultChannel().getId(),
+                            defaultChannelId,
                             null
                     );
                 }
@@ -65,8 +75,25 @@ public class PlayerListener implements Listener {
         java.util.UUID uuid = event.getPlayer().getUniqueId();
         // 清理玩家数据
         plugin.getChannelManager().removePlayer(uuid);
+        plugin.getColorManager().removePlayer(uuid);
         // 清理私聊数据
         plugin.getPrivateMessageManager().clearPlayer(uuid);
         plugin.getPrivateMessageManager().getSocialSpyManager().clearPlayer(uuid);
+    }
+
+    @EventHandler
+    public void onPluginEnable(org.bukkit.event.server.PluginEnableEvent event) {
+        refreshIntegrationCache(event.getPlugin().getName());
+    }
+
+    @EventHandler
+    public void onPluginDisable(org.bukkit.event.server.PluginDisableEvent event) {
+        refreshIntegrationCache(event.getPlugin().getName());
+    }
+
+    private void refreshIntegrationCache(String pluginName) {
+        if ("PlaceholderAPI".equals(pluginName) || "CraftEngine".equals(pluginName)) {
+            gg.fotia.chat.util.MessageUtil.refreshIntegrationCache();
+        }
     }
 }

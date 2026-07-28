@@ -1,6 +1,7 @@
 package gg.fotia.chat.filter;
 
 import gg.fotia.chat.FotiaChat;
+import net.kyori.adventure.text.Component;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -10,9 +11,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 /**
  * 屏蔽词过滤管理器
@@ -21,17 +25,17 @@ public class FilterManager {
 
     private final FotiaChat plugin;
     private FileConfiguration filterConfig;
-    private final Map<String, FilterRule> rules = new LinkedHashMap<>();
+    // 不可变快照 + volatile 整体替换：异步聊天线程读取时不与 reload 竞争
+    private volatile Map<String, FilterRule> rules = Map.of();
 
-    private boolean enabled;
-    private boolean logBlocked;
+    private volatile boolean enabled;
+    private volatile boolean logBlocked;
 
     public FilterManager(FotiaChat plugin) {
         this.plugin = plugin;
     }
 
     public void load() {
-        rules.clear();
         saveDefaultConfig();
 
         File filterFile = new File(plugin.getDataFolder(), "filters.yml");
@@ -50,20 +54,22 @@ public class FilterManager {
         this.logBlocked = filterConfig.getBoolean("log-blocked", true);
 
         // 加载过滤规则
+        Map<String, FilterRule> loaded = new LinkedHashMap<>();
         ConfigurationSection rulesSection = filterConfig.getConfigurationSection("rules");
         if (rulesSection != null) {
             for (String id : rulesSection.getKeys(false)) {
                 ConfigurationSection ruleSection = rulesSection.getConfigurationSection(id);
                 if (ruleSection != null) {
-                    loadRule(id, ruleSection);
+                    loadRule(id, ruleSection, loaded);
                 }
             }
         }
+        this.rules = Collections.unmodifiableMap(loaded);
 
-        plugin.getLogger().info("已加载 " + rules.size() + " 条屏蔽词规则");
+        plugin.getLogger().info("已加载 " + loaded.size() + " 条屏蔽词规则");
     }
 
-    private void loadRule(String id, ConfigurationSection section) {
+    private void loadRule(String id, ConfigurationSection section, Map<String, FilterRule> target) {
         String pattern = section.getString("pattern", "");
         if (pattern.isEmpty()) {
             plugin.getLogger().warning("屏蔽词规则 " + id + " 缺少pattern配置");
@@ -89,7 +95,7 @@ public class FilterManager {
         boolean caseSensitive = section.getBoolean("case-sensitive", false);
 
         FilterRule rule = new FilterRule(id, pattern, type, replaceMode, replacement, caseSensitive);
-        rules.put(id, rule);
+        target.put(id, rule);
     }
 
     private void saveDefaultConfig() {
@@ -119,6 +125,29 @@ public class FilterManager {
             }
         }
 
+        return result;
+    }
+
+    public Component filter(Component message) {
+        if (!enabled || message == null) {
+            return message;
+        }
+        Component result = message;
+        // 纯文本只序列化一次；仅当某条规则真正修改了组件时才重新序列化
+        String plainText = PlainTextComponentSerializer.plainText().serialize(result);
+        for (FilterRule rule : rules.values()) {
+            Component filtered = rule.process(result, plainText);
+            if (filtered == null) {
+                if (logBlocked) {
+                    plugin.getLogger().info("消息被屏蔽词规则 " + rule.getId() + " 阻止");
+                }
+                return null;
+            }
+            if (filtered != result) {
+                result = filtered;
+                plainText = PlainTextComponentSerializer.plainText().serialize(result);
+            }
+        }
         return result;
     }
 

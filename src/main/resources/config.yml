@@ -23,6 +23,9 @@ storage:
     password: ''
     # 连接池大小
     pool-size: 10
+    # 禁言和屏蔽缓存的跨服刷新间隔（秒）
+    # 聊天发送只读取内存缓存，不会直接查询数据库
+    cache-refresh-seconds: 5
 
 # 聊天设置
 chat:
@@ -42,24 +45,13 @@ mute:
 cross-server:
   # 是否启用跨服通信
   enabled: false
-  # 通信类型: redis 或 bungeecord
+  # 通信类型: bungeecord 或 redis
   type: bungeecord
-  # 当前服务器名称
+  # 当前服务器名称；每台服务器必须唯一
   server-name: server1
-  # Redis配置 (当type为redis时使用)
+  # Redis配置（type为redis时使用）
   redis:
     host: localhost
     port: 6379
     password: ''
-  # 服务器组配置
-  # 可以将多个服务器分组，实现组内聊天同步
-  server-groups:
-    # 示例: 所有服务器
-    all:
-      - server1
-      - server2
-      - server3
-    # 示例: 生存服务器组
-    survival:
-      - survival1
-      - survival2
+    channel: fotiachat:messages

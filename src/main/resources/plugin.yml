@@ -8,7 +8,12 @@ description: 高级聊天管理插件
 softdepend:
   - PlaceholderAPI
   - CraftEngine
-  - Custom-Nameplates
+  - CustomNameplates
+
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - com.mysql:mysql-connector-j:8.4.0
+  - redis.clients:jedis:5.2.0
 
 commands:
   channel:

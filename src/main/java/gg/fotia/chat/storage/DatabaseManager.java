@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -17,9 +19,14 @@ import java.util.UUID;
  */
 public class DatabaseManager {
 
+    public static final String CACHE_MUTES = "mutes";
+    public static final String CACHE_IGNORES = "ignores";
+
     private final FotiaChat plugin;
-    private HikariDataSource dataSource;
-    private boolean enabled = false;
+    private volatile HikariDataSource dataSource;
+    private volatile DatabaseTaskQueue databaseTaskQueue;
+    private volatile boolean enabled = false;
+    private volatile boolean closing = false;
 
     public DatabaseManager(FotiaChat plugin) {
         this.plugin = plugin;
@@ -29,6 +36,7 @@ public class DatabaseManager {
      * 初始化数据库连接
      */
     public void init() {
+        closing = false;
         ConfigurationSection config = plugin.getConfigManager().getConfig()
                 .getConfigurationSection("storage");
 
@@ -48,7 +56,7 @@ public class DatabaseManager {
         String database = config.getString("mysql.database", "fotiachat");
         String username = config.getString("mysql.username", "root");
         String password = config.getString("mysql.password", "");
-        int poolSize = config.getInt("mysql.pool-size", 10);
+        int poolSize = Math.max(1, config.getInt("mysql.pool-size", 10));
 
         try {
             HikariConfig hikariConfig = new HikariConfig();
@@ -57,7 +65,7 @@ public class DatabaseManager {
             hikariConfig.setUsername(username);
             hikariConfig.setPassword(password);
             hikariConfig.setMaximumPoolSize(poolSize);
-            hikariConfig.setMinimumIdle(2);
+            hikariConfig.setMinimumIdle(Math.min(2, poolSize));
             hikariConfig.setIdleTimeout(300000);
             hikariConfig.setConnectionTimeout(10000);
             hikariConfig.setMaxLifetime(600000);
@@ -69,6 +77,7 @@ public class DatabaseManager {
             hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
             dataSource = new HikariDataSource(hikariConfig);
+            databaseTaskQueue = new DatabaseTaskQueue("FotiaChat-Database");
             enabled = true;
 
             // 创建表
@@ -118,6 +127,13 @@ public class DatabaseManager {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """;
 
+        String createCacheVersionTable = """
+            CREATE TABLE IF NOT EXISTS fotiachat_cache_version (
+                cache_name VARCHAR(32) PRIMARY KEY,
+                version BIGINT NOT NULL DEFAULT 0
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """;
+
         try (Connection conn = getConnection()) {
             try (PreparedStatement stmt = conn.prepareStatement(createPlayerDataTable)) {
                 stmt.executeUpdate();
@@ -128,8 +144,44 @@ public class DatabaseManager {
             try (PreparedStatement stmt = conn.prepareStatement(createIgnoresTable)) {
                 stmt.executeUpdate();
             }
+            try (PreparedStatement stmt = conn.prepareStatement(createCacheVersionTable)) {
+                stmt.executeUpdate();
+            }
         } catch (SQLException e) {
             plugin.getLogger().severe("创建数据表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 在同一连接上递增缓存版本号，供其他服务器做变更检测。
+     */
+    private void bumpCacheVersion(Connection conn, String cacheName) throws SQLException {
+        String sql = """
+            INSERT INTO fotiachat_cache_version (cache_name, version) VALUES (?, 1)
+            ON DUPLICATE KEY UPDATE version = version + 1
+            """;
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, cacheName);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * 读取缓存版本号。返回 -1 表示查询失败（调用方应按“可能有变更”处理）。
+     */
+    public long loadCacheVersion(String cacheName) {
+        if (!enabled) return -1L;
+
+        String sql = "SELECT version FROM fotiachat_cache_version WHERE cache_name = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, cacheName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0L;
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().warning("读取缓存版本失败: " + e.getMessage());
+            return -1L;
         }
     }
 
@@ -158,7 +210,7 @@ public class DatabaseManager {
                 color_id = VALUES(color_id)
             """;
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
@@ -200,18 +252,25 @@ public class DatabaseManager {
     }
 
     /**
-     * 更新玩家频道
+     * 更新玩家频道（upsert，玩家行缺失时自动补建，避免更新被静默丢弃）
      */
-    public void updatePlayerChannel(UUID uuid, String channelId) {
+    public void updatePlayerChannel(UUID uuid, String username, String channelId) {
         if (!enabled) return;
 
-        String sql = "UPDATE fotiachat_players SET channel_id = ? WHERE uuid = ?";
+        String sql = """
+            INSERT INTO fotiachat_players (uuid, username, channel_id)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                channel_id = VALUES(channel_id)
+            """;
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, channelId);
-                stmt.setString(2, uuid.toString());
+                stmt.setString(1, uuid.toString());
+                stmt.setString(2, username);
+                stmt.setString(3, channelId);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().warning("更新玩家频道失败: " + e.getMessage());
@@ -220,18 +279,25 @@ public class DatabaseManager {
     }
 
     /**
-     * 更新玩家颜色
+     * 更新玩家颜色（upsert，玩家行缺失时自动补建）
      */
-    public void updatePlayerColor(UUID uuid, String colorId) {
+    public void updatePlayerColor(UUID uuid, String username, String colorId) {
         if (!enabled) return;
 
-        String sql = "UPDATE fotiachat_players SET color_id = ? WHERE uuid = ?";
+        String sql = """
+            INSERT INTO fotiachat_players (uuid, username, color_id)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                color_id = VALUES(color_id)
+            """;
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, colorId);
-                stmt.setString(2, uuid.toString());
+                stmt.setString(1, uuid.toString());
+                stmt.setString(2, username);
+                stmt.setString(3, colorId);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 plugin.getLogger().warning("更新玩家颜色失败: " + e.getMessage());
@@ -243,10 +309,41 @@ public class DatabaseManager {
      * 关闭数据库连接
      */
     public void close() {
+        closing = true;
+        DatabaseTaskQueue taskQueue = databaseTaskQueue;
+        if (taskQueue != null) {
+            taskQueue.stopAccepting();
+            if (!taskQueue.flush(30, java.util.concurrent.TimeUnit.SECONDS)) {
+                plugin.getLogger().severe(
+                        "Database write queue did not drain within 30 seconds; pending writes may be lost");
+            }
+            taskQueue.close();
+            databaseTaskQueue = null;
+        }
+        enabled = false;
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             plugin.getLogger().info("MySQL数据库连接已关闭");
         }
+    }
+
+    private boolean submitAsync(Runnable task) {
+        DatabaseTaskQueue taskQueue = databaseTaskQueue;
+        if (!enabled || closing || taskQueue == null) {
+            return false;
+        }
+        if (!taskQueue.submit(task)) {
+            plugin.getLogger().warning("数据库任务被拒绝: 任务队列已关闭");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 在数据库任务队列上执行任务（保证与其他写操作的先后顺序）。
+     */
+    public boolean submitTask(Runnable task) {
+        return submitAsync(task);
     }
 
     /**
@@ -275,7 +372,7 @@ public class DatabaseManager {
                 muted_by = VALUES(muted_by)
             """;
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
@@ -285,6 +382,7 @@ public class DatabaseManager {
                 stmt.setString(5, reason);
                 stmt.setString(6, mutedBy);
                 stmt.executeUpdate();
+                bumpCacheVersion(conn, CACHE_MUTES);
             } catch (SQLException e) {
                 plugin.getLogger().warning("保存禁言数据失败: " + e.getMessage());
             }
@@ -299,11 +397,13 @@ public class DatabaseManager {
 
         String sql = "DELETE FROM fotiachat_mutes WHERE uuid = ?";
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
-                stmt.executeUpdate();
+                if (stmt.executeUpdate() > 0) {
+                    bumpCacheVersion(conn, CACHE_MUTES);
+                }
             } catch (SQLException e) {
                 plugin.getLogger().warning("删除禁言数据失败: " + e.getMessage());
             }
@@ -311,41 +411,11 @@ public class DatabaseManager {
     }
 
     /**
-     * 加载禁言数据
-     */
-    public MuteRecord loadMute(UUID uuid) {
-        if (!enabled) return null;
-
-        String sql = "SELECT username, mute_time, expire_time, reason, muted_by FROM fotiachat_mutes WHERE uuid = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, uuid.toString());
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return new MuteRecord(
-                            uuid,
-                            rs.getString("username"),
-                            rs.getLong("mute_time"),
-                            rs.getLong("expire_time"),
-                            rs.getString("reason"),
-                            rs.getString("muted_by")
-                    );
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("加载禁言数据失败: " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
      * 加载所有禁言数据
      */
-    public java.util.List<MuteRecord> loadAllMutes() {
-        java.util.List<MuteRecord> mutes = new java.util.ArrayList<>();
-        if (!enabled) return mutes;
+    public LoadResult<MuteRecord> loadAllMutes() {
+        List<MuteRecord> mutes = new ArrayList<>();
+        if (!enabled) return LoadResult.failure();
 
         String sql = "SELECT uuid, username, mute_time, expire_time, reason, muted_by FROM fotiachat_mutes WHERE expire_time = 0 OR expire_time > ?";
 
@@ -364,11 +434,12 @@ public class DatabaseManager {
                     ));
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | IllegalArgumentException e) {
             plugin.getLogger().warning("加载所有禁言数据失败: " + e.getMessage());
+            return LoadResult.failure();
         }
 
-        return mutes;
+        return LoadResult.success(mutes);
     }
 
     /**
@@ -379,11 +450,13 @@ public class DatabaseManager {
 
         String sql = "DELETE FROM fotiachat_mutes WHERE expire_time > 0 AND expire_time < ?";
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setLong(1, System.currentTimeMillis());
-                stmt.executeUpdate();
+                if (stmt.executeUpdate() > 0) {
+                    bumpCacheVersion(conn, CACHE_MUTES);
+                }
             } catch (SQLException e) {
                 plugin.getLogger().warning("清理过期禁言失败: " + e.getMessage());
             }
@@ -413,13 +486,15 @@ public class DatabaseManager {
             VALUES (?, ?, ?)
             """;
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, playerUuid.toString());
                 stmt.setString(2, ignoredUuid.toString());
                 stmt.setString(3, ignoredName);
-                stmt.executeUpdate();
+                if (stmt.executeUpdate() > 0) {
+                    bumpCacheVersion(conn, CACHE_IGNORES);
+                }
             } catch (SQLException e) {
                 plugin.getLogger().warning("添加屏蔽失败: " + e.getMessage());
             }
@@ -434,12 +509,14 @@ public class DatabaseManager {
 
         String sql = "DELETE FROM fotiachat_ignores WHERE player_uuid = ? AND ignored_uuid = ?";
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        submitAsync(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, playerUuid.toString());
                 stmt.setString(2, ignoredUuid.toString());
-                stmt.executeUpdate();
+                if (stmt.executeUpdate() > 0) {
+                    bumpCacheVersion(conn, CACHE_IGNORES);
+                }
             } catch (SQLException e) {
                 plugin.getLogger().warning("移除屏蔽失败: " + e.getMessage());
             }
@@ -447,48 +524,46 @@ public class DatabaseManager {
     }
 
     /**
-     * 检查是否屏蔽了某个玩家
+     * 一次性加载全部屏蔽关系，用于构建聊天热路径缓存。
      */
-    public boolean isIgnoring(UUID playerUuid, UUID targetUuid) {
-        if (!enabled) return false;
-
-        String sql = "SELECT 1 FROM fotiachat_ignores WHERE player_uuid = ? AND ignored_uuid = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, playerUuid.toString());
-            stmt.setString(2, targetUuid.toString());
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("检查屏蔽状态失败: " + e.getMessage());
+    public LoadResult<IgnoreRecord> loadAllIgnores() {
+        List<IgnoreRecord> ignores = new ArrayList<>();
+        if (!enabled) {
+            return LoadResult.failure();
         }
-
-        return false;
+        String sql = "SELECT player_uuid, ignored_uuid, ignored_name FROM fotiachat_ignores";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                ignores.add(new IgnoreRecord(
+                        UUID.fromString(rs.getString("player_uuid")),
+                        UUID.fromString(rs.getString("ignored_uuid")),
+                        rs.getString("ignored_name")
+                ));
+            }
+        } catch (SQLException | IllegalArgumentException exception) {
+            plugin.getLogger().warning("加载全部屏蔽数据失败: " + exception.getMessage());
+            return LoadResult.failure();
+        }
+        return LoadResult.success(ignores);
     }
 
-    /**
-     * 获取玩家的屏蔽列表
-     */
-    public java.util.List<String> getIgnoreList(UUID playerUuid) {
-        java.util.List<String> names = new java.util.ArrayList<>();
-        if (!enabled) return names;
+    public record IgnoreRecord(UUID playerUuid, UUID ignoredUuid, String ignoredName) {
+    }
 
-        String sql = "SELECT ignored_name FROM fotiachat_ignores WHERE player_uuid = ?";
+    public record LoadResult<T>(boolean successful, List<T> records) {
 
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, playerUuid.toString());
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    names.add(rs.getString("ignored_name"));
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("获取屏蔽列表失败: " + e.getMessage());
+        public LoadResult {
+            records = List.copyOf(records);
         }
 
-        return names;
+        public static <T> LoadResult<T> success(List<T> records) {
+            return new LoadResult<>(true, records);
+        }
+
+        public static <T> LoadResult<T> failure() {
+            return new LoadResult<>(false, List.of());
+        }
     }
 }

@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,16 +29,16 @@ public class ChannelManager {
 
     private final FotiaChat plugin;
     private FileConfiguration channelsConfig;
-    private final Map<String, Channel> channels = new HashMap<>();
+    // 不可变快照 + volatile 整体替换：异步聊天线程读取时不与 reload 竞争
+    private volatile Map<String, Channel> channels = Map.of();
     private final Map<UUID, String> playerChannels = new ConcurrentHashMap<>();
-    private String defaultChannelId;
+    private volatile String defaultChannelId;
 
     public ChannelManager(FotiaChat plugin) {
         this.plugin = plugin;
     }
 
     public void loadChannels() {
-        channels.clear();
         saveDefaultChannelsConfig();
 
         File channelsFile = new File(plugin.getDataFolder(), "channels.yml");
@@ -51,26 +51,31 @@ public class ChannelManager {
             channelsConfig.setDefaults(defaultConfig);
         }
 
+        Map<String, Channel> loaded = new LinkedHashMap<>();
+        String loadedDefaultId = null;
         ConfigurationSection channelsSection = channelsConfig.getConfigurationSection("channels");
         if (channelsSection != null) {
             for (String channelId : channelsSection.getKeys(false)) {
                 ConfigurationSection section = channelsSection.getConfigurationSection(channelId);
                 if (section != null) {
                     Channel channel = loadChannel(channelId, section);
-                    channels.put(channelId.toLowerCase(), channel);
+                    loaded.put(channelId.toLowerCase(), channel);
 
                     if (channel.isDefault()) {
-                        defaultChannelId = channelId.toLowerCase();
+                        loadedDefaultId = channelId.toLowerCase();
                     }
                 }
             }
         }
 
-        if (defaultChannelId == null && !channels.isEmpty()) {
-            defaultChannelId = channels.keySet().iterator().next();
+        if (loadedDefaultId == null && !loaded.isEmpty()) {
+            loadedDefaultId = loaded.keySet().iterator().next();
         }
 
-        plugin.getLogger().info("已加载 " + channels.size() + " 个频道");
+        this.channels = Collections.unmodifiableMap(loaded);
+        this.defaultChannelId = loadedDefaultId;
+
+        plugin.getLogger().info("已加载 " + loaded.size() + " 个频道");
     }
 
     private void saveDefaultChannelsConfig() {
@@ -89,6 +94,7 @@ public class ChannelManager {
         String shortcut = section.getString("shortcut", "");
         int radius = section.getInt("radius", 0);
         boolean isDefault = section.getBoolean("default", false);
+        boolean crossServer = section.getBoolean("cross-server", true);
 
         boolean hoverEnabled = false;
         List<String> hoverText = new ArrayList<>();
@@ -116,7 +122,7 @@ public class ChannelManager {
         }
 
         return new Channel(id, name, type, format, permission, shortcut, radius, isDefault,
-                hoverEnabled, hoverText, clickEnabled, clickAction, clickValue,
+                crossServer, hoverEnabled, hoverText, clickEnabled, clickAction, clickValue,
                 buildSegmentConfigs(segmentConfigs));
     }
 
@@ -201,7 +207,14 @@ public class ChannelManager {
     }
 
     public Channel getDefaultChannel() {
-        return channels.get(defaultChannelId);
+        Map<String, Channel> current = channels;
+        String defaultId = defaultChannelId;
+        Channel channel = defaultId == null ? null : current.get(defaultId);
+        if (channel != null) {
+            return channel;
+        }
+        // reload 过渡期或默认频道被删除时兜底到第一个频道
+        return current.isEmpty() ? null : current.values().iterator().next();
     }
 
     public Channel getPlayerChannel(Player player) {
@@ -217,7 +230,7 @@ public class ChannelManager {
         playerChannels.put(player.getUniqueId(), channelId.toLowerCase());
 
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
-            plugin.getDatabaseManager().updatePlayerChannel(player.getUniqueId(), channelId.toLowerCase());
+            plugin.getDatabaseManager().updatePlayerChannel(player.getUniqueId(), player.getName(), channelId.toLowerCase());
         }
     }
 

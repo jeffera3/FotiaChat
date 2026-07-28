@@ -4,6 +4,7 @@ import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -76,6 +77,24 @@ class CraftEngineItemSupport {
  */
 public class MenuIcon {
 
+    private static final java.lang.reflect.Method SET_ITEM_MODEL_METHOD;
+    private static final java.lang.reflect.Method SET_TOOLTIP_STYLE_METHOD;
+
+    static {
+        java.lang.reflect.Method setItemModel = null;
+        java.lang.reflect.Method setTooltipStyle = null;
+        try {
+            setItemModel = ItemMeta.class.getMethod("setItemModel", Key.class);
+        } catch (NoSuchMethodException ignored) {
+        }
+        try {
+            setTooltipStyle = ItemMeta.class.getMethod("setTooltipStyle", Key.class);
+        } catch (NoSuchMethodException ignored) {
+        }
+        SET_ITEM_MODEL_METHOD = setItemModel;
+        SET_TOOLTIP_STYLE_METHOD = setTooltipStyle;
+    }
+
     private final String id;
     private final Material material;
     private final String craftEngineItem;
@@ -93,8 +112,8 @@ public class MenuIcon {
         ConfigurationSection displaySection = section.getConfigurationSection("display");
         if (displaySection != null) {
             String materialName = displaySection.getString("material", "STONE");
-            this.material = Material.matchMaterial(materialName) != null
-                    ? Material.matchMaterial(materialName) : Material.STONE;
+            Material matchedMaterial = Material.matchMaterial(materialName);
+            this.material = matchedMaterial != null ? matchedMaterial : Material.STONE;
             this.craftEngineItem = displaySection.getString("craftengine-item", "");
             this.itemModel = displaySection.getString("item_model", null);
             this.modelData = displaySection.getInt("model_data", 0);
@@ -213,35 +232,24 @@ public class MenuIcon {
                 meta.setCustomModelData(modelData);
             }
 
-            // 设置物品模型 (1.21.4+ Custom Item Model)
-            // 使用反射以兼容不同版本
-            if (itemModel != null && !itemModel.isEmpty()) {
+            if (itemModel != null && !itemModel.isEmpty() && SET_ITEM_MODEL_METHOD != null) {
                 try {
-                    String[] parts = itemModel.split(":");
+                    String[] parts = itemModel.split(":", 2);
                     if (parts.length == 2) {
-                        // 尝试使用反射调用setItemModel方法
-                        java.lang.reflect.Method setItemModelMethod = meta.getClass().getMethod("setItemModel", Key.class);
-                        setItemModelMethod.invoke(meta, Key.key(parts[0], parts[1]));
+                        SET_ITEM_MODEL_METHOD.invoke(meta, Key.key(parts[0], parts[1]));
                     }
-                } catch (Exception ignored) {
-                    // 版本不支持，忽略
+                } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
                 }
             }
 
             // 设置tooltip样式 (1.21.4+)
-            // 使用反射以兼容不同版本
-            if (tooltip != null && !tooltip.isEmpty()) {
+            if (tooltip != null && !tooltip.isEmpty() && SET_TOOLTIP_STYLE_METHOD != null) {
                 try {
-                    String[] parts = tooltip.split(":");
-                    if (parts.length >= 2) {
-                        String namespace = parts[0];
-                        String path = parts.length > 2 ? parts[1] + ":" + parts[2] : parts[1];
-                        // 尝试使用反射调用setTooltipStyle方法
-                        java.lang.reflect.Method setTooltipStyleMethod = meta.getClass().getMethod("setTooltipStyle", Key.class);
-                        setTooltipStyleMethod.invoke(meta, Key.key(namespace, path));
+                    String[] parts = tooltip.split(":", 2);
+                    if (parts.length == 2) {
+                        SET_TOOLTIP_STYLE_METHOD.invoke(meta, Key.key(parts[0], parts[1]));
                     }
-                } catch (Exception ignored) {
-                    // 版本不支持，忽略
+                } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
                 }
             }
 
@@ -258,7 +266,8 @@ public class MenuIcon {
         if (player == null) return text;
 
         text = text.replace("{player}", player.getName());
-        text = text.replace("{player_displayname}", player.displayName().toString());
+        text = text.replace("{player_displayname}",
+                PlainTextComponentSerializer.plainText().serialize(player.displayName()));
 
         // PlaceholderAPI支持
         if (MessageUtil.isPlaceholderAPIEnabled()) {

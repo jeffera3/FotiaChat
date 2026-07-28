@@ -31,13 +31,15 @@ public class MenuListener implements Listener {
             return;
         }
 
+        org.bukkit.inventory.InventoryHolder holder = event.getInventory().getHolder(false);
+
         // 检查是否是物品展示GUI
-        if (event.getInventory().getHolder() instanceof ItemDisplayGuiManager.ItemDisplayHolder) {
+        if (holder instanceof ItemDisplayGuiManager.ItemDisplayHolder) {
             event.setCancelled(true);
             return;
         }
 
-        if (!(event.getInventory().getHolder() instanceof Menu menu)) {
+        if (!(holder instanceof Menu menu)) {
             return;
         }
 
@@ -65,11 +67,8 @@ public class MenuListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder() instanceof Menu) {
-            event.setCancelled(true);
-        }
-        // 物品展示GUI也禁止拖拽
-        if (event.getInventory().getHolder() instanceof ItemDisplayGuiManager.ItemDisplayHolder) {
+        org.bukkit.inventory.InventoryHolder holder = event.getInventory().getHolder(false);
+        if (holder instanceof Menu || holder instanceof ItemDisplayGuiManager.ItemDisplayHolder) {
             event.setCancelled(true);
         }
     }

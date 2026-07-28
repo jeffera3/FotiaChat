@@ -19,17 +19,17 @@ public class ColorManager {
 
     private final FotiaChat plugin;
     private FileConfiguration colorConfig;
-    private final Map<String, ChatColor> colors = new LinkedHashMap<>();
-    private final Map<UUID, String> playerColors = new HashMap<>();
+    // 不可变快照 + volatile 整体替换：异步聊天线程读取时不与 reload 竞争
+    private volatile Map<String, ChatColor> colors = Map.of();
+    private final Map<UUID, String> playerColors = new java.util.concurrent.ConcurrentHashMap<>();
 
-    private String defaultColorId;
+    private volatile String defaultColorId;
 
     public ColorManager(FotiaChat plugin) {
         this.plugin = plugin;
     }
 
     public void load() {
-        colors.clear();
         saveDefaultConfig();
 
         File colorFile = new File(plugin.getDataFolder(), "colors.yml");
@@ -47,20 +47,23 @@ public class ColorManager {
         this.defaultColorId = colorConfig.getString("default-color", "white");
 
         // 加载颜色配置
+        Map<String, ChatColor> loaded = new LinkedHashMap<>();
         ConfigurationSection colorsSection = colorConfig.getConfigurationSection("colors");
         if (colorsSection != null) {
             for (String id : colorsSection.getKeys(false)) {
                 ConfigurationSection colorSection = colorsSection.getConfigurationSection(id);
                 if (colorSection != null) {
-                    loadColor(id, colorSection);
+                    ChatColor color = loadColor(id, colorSection);
+                    loaded.put(id, color);
                 }
             }
         }
+        this.colors = Collections.unmodifiableMap(loaded);
 
-        plugin.getLogger().info("已加载 " + colors.size() + " 种聊天颜色");
+        plugin.getLogger().info("已加载 " + loaded.size() + " 种聊天颜色");
     }
 
-    private void loadColor(String id, ConfigurationSection section) {
+    private ChatColor loadColor(String id, ConfigurationSection section) {
         String name = section.getString("name", id);
 
         ColorType type;
@@ -73,8 +76,7 @@ public class ColorManager {
         String format = section.getString("format", "<white>");
         String permission = section.getString("permission", "");
 
-        ChatColor color = new ChatColor(id, name, type, format, permission);
-        colors.put(id, color);
+        return new ChatColor(id, name, type, format, permission);
     }
 
     private void saveDefaultConfig() {
@@ -111,7 +113,7 @@ public class ColorManager {
 
         // 保存到数据库
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
-            plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), colorId);
+            plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), player.getName(), colorId);
         }
 
         return true;
@@ -125,7 +127,7 @@ public class ColorManager {
 
         // 保存到数据库
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
-            plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), null);
+            plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), player.getName(), null);
         }
     }
 
@@ -181,6 +183,10 @@ public class ColorManager {
         if (colorId != null && colors.containsKey(colorId)) {
             playerColors.put(player.getUniqueId(), colorId);
         }
+    }
+
+    public void removePlayer(UUID playerUuid) {
+        playerColors.remove(playerUuid);
     }
 
     /**

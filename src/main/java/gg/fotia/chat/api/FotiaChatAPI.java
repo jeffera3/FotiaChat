@@ -137,6 +137,34 @@ public class FotiaChatAPI {
         plugin.unregisterPublicChatObserver(observer);
     }
 
+    /**
+     * 注册公共聊天前置拦截器。
+     */
+    public static void registerPublicChatInterceptor(PublicChatInterceptor interceptor) {
+        plugin.registerPublicChatInterceptor(interceptor);
+    }
+
+    /**
+     * 注销公共聊天前置拦截器。
+     */
+    public static void unregisterPublicChatInterceptor(PublicChatInterceptor interceptor) {
+        plugin.unregisterPublicChatInterceptor(interceptor);
+    }
+
+    /**
+     * 注册聊天格式额外占位符提供器。
+     */
+    public static void registerChatPlaceholderProvider(ChatPlaceholderProvider provider) {
+        plugin.registerChatPlaceholderProvider(provider);
+    }
+
+    /**
+     * 注销聊天格式额外占位符提供器。
+     */
+    public static void unregisterChatPlaceholderProvider(ChatPlaceholderProvider provider) {
+        plugin.unregisterChatPlaceholderProvider(provider);
+    }
+
     // ==================== 便捷方法 ====================
 
     /**
@@ -169,6 +197,7 @@ public class FotiaChatAPI {
 
     /**
      * 将虚拟发言者聊天消息按 FotiaChat 规则分发。
+     * 非主线程调用会提交到服务器主线程；返回值表示消息已发送或已成功提交。
      */
     public static boolean dispatchVirtualChat(VirtualChatSender sender, String channelId, String message) {
         return plugin.getVirtualChatDispatcher().dispatchPublicChat(sender, channelId, message);
@@ -176,6 +205,7 @@ public class FotiaChatAPI {
 
     /**
      * 将虚拟发言者聊天消息发送到默认频道。
+     * 非主线程调用会提交到服务器主线程；返回值表示消息已发送或已成功提交。
      */
     public static boolean dispatchVirtualChat(VirtualChatSender sender, String message) {
         return plugin.getVirtualChatDispatcher().dispatchPublicChat(sender, message);

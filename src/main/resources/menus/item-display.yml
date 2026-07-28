@@ -9,6 +9,12 @@
 # 快照过期时间（秒）
 # 背包、末影箱、手持物品 GUI 快照会在此时间后过期
 snapshot-expire-time: 300
+# 清理过期快照的间隔（秒）
+snapshot-cleanup-interval-seconds: 60
+# 全服最多保留的快照数量，超过后淘汰最旧快照
+snapshot-max-total: 1000
+# 每名玩家最多保留的快照数量，超过后淘汰该玩家最旧快照
+snapshot-max-per-player: 20
 
 # ==================== 手持物品展示 ====================
 hand-item:

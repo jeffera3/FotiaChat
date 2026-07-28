@@ -21,6 +21,7 @@ public class Menu implements InventoryHolder {
     private final List<String> layout;
     private final Map<Character, MenuIcon> icons;
     private final int size;
+    private Inventory inventory;
 
     public Menu(String id, FileConfiguration config) {
         this.id = id;
@@ -91,6 +92,7 @@ public class Menu implements InventoryHolder {
     public Inventory open(Player player) {
         Component titleComponent = MessageUtil.parse(parsePlaceholders(title, player));
         Inventory inventory = Bukkit.createInventory(this, size, titleComponent);
+        this.inventory = inventory;
 
         // 填充物品
         for (int slot = 0; slot < size; slot++) {
@@ -118,6 +120,6 @@ public class Menu implements InventoryHolder {
 
     @Override
     public Inventory getInventory() {
-        return null;
+        return inventory;
     }
 }

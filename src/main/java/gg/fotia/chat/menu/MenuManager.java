@@ -37,6 +37,12 @@ public class MenuManager {
             for (File file : menuFiles) {
                 String menuId = file.getName().replace(".yml", "");
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                // menus 目录也包含 item-display.yml；缺少 Layout/Icons 的文件不是通用菜单
+                if (!config.isList("Layout") || config.getStringList("Layout").isEmpty()
+                        || !config.isConfigurationSection("Icons")) {
+                    plugin.getLogger().fine("跳过非菜单配置: " + file.getName());
+                    continue;
+                }
                 Menu menu = new Menu(menuId, config);
                 menus.put(menuId, menu);
             }

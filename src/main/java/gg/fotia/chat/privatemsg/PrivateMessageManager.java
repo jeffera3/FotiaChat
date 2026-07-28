@@ -92,6 +92,13 @@ public class PrivateMessageManager {
             return false;
         }
 
+        // 对方屏蔽了发送者时拦截私聊，与公屏聊天的屏蔽行为保持一致
+        if (plugin.getIgnoreManager() != null
+                && plugin.getIgnoreManager().isIgnoring(target.getUniqueId(), sender.getUniqueId())) {
+            plugin.getMessageManager().send(sender, "privatemsg.target-ignoring");
+            return false;
+        }
+
         sendSenderEcho(sender, target.getName(), message);
         sendReceiverEcho(target, sender.getName(), message);
 

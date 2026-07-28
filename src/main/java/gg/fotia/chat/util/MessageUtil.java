@@ -64,17 +64,38 @@ public class MessageUtil {
     }
 
     /**
-     * 检查PlaceholderAPI是否可用
+     * 检查PlaceholderAPI是否可用（结果缓存，插件启停时通过 refreshIntegrationCache 刷新）
      */
     public static boolean isPlaceholderAPIEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
+        Boolean cached = placeholderApiEnabled;
+        if (cached == null) {
+            cached = Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
+            placeholderApiEnabled = cached;
+        }
+        return cached;
     }
 
     /**
-     * 检查CraftEngine是否可用
+     * 检查CraftEngine是否可用（结果缓存，插件启停时通过 refreshIntegrationCache 刷新）
      */
     public static boolean isCraftEngineEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("CraftEngine");
+        Boolean cached = craftEngineEnabled;
+        if (cached == null) {
+            cached = Bukkit.getPluginManager().isPluginEnabled("CraftEngine");
+            craftEngineEnabled = cached;
+        }
+        return cached;
+    }
+
+    private static volatile Boolean placeholderApiEnabled;
+    private static volatile Boolean craftEngineEnabled;
+
+    /**
+     * 使集成插件的启用状态缓存失效（在插件启用/禁用事件与 reload 时调用）
+     */
+    public static void refreshIntegrationCache() {
+        placeholderApiEnabled = null;
+        craftEngineEnabled = null;
     }
 
     /**

@@ -60,6 +60,11 @@ public class LegacyColorConverter {
             return text;
         }
 
+        // 快速短路：绝大多数文本不含旧版颜色代码，避免 3 个正则全扫描与重建
+        if (text.indexOf('&') < 0 && text.indexOf('§') < 0) {
+            return text;
+        }
+
         // 先处理 &#RRGGBB 格式的十六进制颜色
         text = convertHexColors(text);
 
