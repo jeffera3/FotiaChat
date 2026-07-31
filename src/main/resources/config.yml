@@ -33,6 +33,24 @@ chat:
   # 每个频道可以有独立的格式、悬浮文本和点击事件
   # 是否允许玩家在消息中使用颜色代码
   allow-color-codes: true
+  # 玩家艾特设置（仅识别当前服务器在线玩家）
+  mention:
+    # 是否启用艾特功能
+    enabled: true
+    # 是否将消息中的完整玩家名自动识别为艾特；关闭后必须输入 @玩家名
+    auto-detect-player-name: true
+    # 艾特在聊天中的显示格式，支持 {player}（被艾特玩家）和 {sender}（发送者）
+    display: "<!i><yellow><bold>@{player}</bold></yellow>"
+    # 鼠标悬停文本，支持 MiniMessage、旧颜色码、{player} 和 {sender}
+    hover:
+      - "<!i><gray>玩家: <white>{player}</white></gray>"
+      - "<!i><gray>由 <white>{sender}</white> 艾特</gray>"
+    # 只有实际收到该频道消息的被艾特玩家才会播放提示音
+    sound:
+      enabled: true
+      name: ENTITY_EXPERIENCE_ORB_PICKUP
+      volume: 1.0
+      pitch: 1.2
 
 # 禁言设置
 mute:

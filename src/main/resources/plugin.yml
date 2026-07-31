@@ -143,6 +143,9 @@ permissions:
   fotiachat.command.chatignore:
     description: 允许使用屏蔽玩家命令
     default: true
+  fotiachat.mention.use:
+    description: 允许在聊天中艾特在线玩家
+    default: true
   fotiachat.item.inventory.view:
     description: 允许查看聊天中展示的背包快照
     default: true

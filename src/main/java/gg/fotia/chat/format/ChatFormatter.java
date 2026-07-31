@@ -63,6 +63,10 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, Component messageComponent, ChatColor chatColor) {
+        return formatPreparedMessage(player, channel, prepareMessage(player, messageComponent, chatColor));
+    }
+
+    public Component prepareMessage(Player player, Component messageComponent, ChatColor chatColor) {
         Component safeMessage = messageComponent == null ? Component.empty() : messageComponent;
         ItemDisplayManager itemDisplayManager = plugin.getItemDisplayManager();
         if (itemDisplayManager != null) {
@@ -71,7 +75,15 @@ public class ChatFormatter {
         if (chatColor != null) {
             safeMessage = chatColor.apply(safeMessage, miniMessage);
         }
-        return format(playerContext(player), channel, safeMessage);
+        return safeMessage;
+    }
+
+    public Component prepareMessage(Player player, String message, ChatColor chatColor) {
+        return prepareMessageComponent(SenderContext.fromPlayer(player), message, chatColor);
+    }
+
+    public Component formatPreparedMessage(Player player, Channel channel, Component messageComponent) {
+        return format(playerContext(player), channel, messageComponent);
     }
 
     public Component format(VirtualChatSender sender, Channel channel, Component messageComponent) {
@@ -96,6 +108,15 @@ public class ChatFormatter {
     }
 
     private Component format(SenderContext sender, Channel channel, String message, ChatColor chatColor) {
+        return formatInternal(
+                sender,
+                channel,
+                channel.getFormat(),
+                prepareMessageComponent(sender, message, chatColor)
+        );
+    }
+
+    private Component prepareMessageComponent(SenderContext sender, String message, ChatColor chatColor) {
         String safeMessage = craftEngineHandler.processImageTags(message);
         ItemDisplayManager itemDisplayManager = plugin.getItemDisplayManager();
         boolean containsRichPlaceholder = sender.player() != null
@@ -110,7 +131,7 @@ public class ChatFormatter {
         if (chatColor != null && containsRichPlaceholder) {
             messageComponent = chatColor.apply(messageComponent, miniMessage);
         }
-        return formatInternal(sender, channel, channel.getFormat(), messageComponent);
+        return messageComponent;
     }
 
     private Component format(SenderContext sender, Channel channel, Component messageComponent) {

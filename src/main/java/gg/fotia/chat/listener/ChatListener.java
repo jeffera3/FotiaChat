@@ -7,6 +7,7 @@ import gg.fotia.chat.color.ChatColor;
 import gg.fotia.chat.format.ChatFormatter;
 import gg.fotia.chat.format.CraftEngineHandler;
 import gg.fotia.chat.ignore.IgnoreManager;
+import gg.fotia.chat.mention.MentionManager;
 import gg.fotia.chat.util.LegacyColorConverter;
 import gg.fotia.chat.util.ComponentTextTransformer;
 import gg.fotia.chat.util.MessageUtil;
@@ -39,12 +40,14 @@ public class ChatListener implements Listener {
     private final ChannelManager channelManager;
     private final ChatFormatter chatFormatter;
     private final IgnoreManager ignoreManager;
+    private final MentionManager mentionManager;
 
     public ChatListener(FotiaChat plugin) {
         this.plugin = plugin;
         this.channelManager = plugin.getChannelManager();
         this.chatFormatter = plugin.getChatFormatter();
         this.ignoreManager = plugin.getIgnoreManager();
+        this.mentionManager = new MentionManager(plugin);
     }
 
     /**
@@ -142,12 +145,13 @@ public class ChatListener implements Listener {
         final boolean preserveIncomingComponent = shouldPreserveIncomingComponent(workingMessageComponent);
 
         final String finalMessage;
+        final Component preparedMessage;
         final Component formattedMessage;
 
         ChatColor chatColor = plugin.getColorManager().getPlayerColor(player);
         if (preserveIncomingComponent) {
             finalMessage = message;
-            formattedMessage = chatFormatter.format(player, finalChannel, workingMessageComponent, chatColor);
+            preparedMessage = chatFormatter.prepareMessage(player, workingMessageComponent, chatColor);
         } else {
             boolean allowInlineColors = plugin.getConfigManager().isAllowColorCodes()
                     && player.hasPermission(INLINE_COLOR_PERMISSION);
@@ -158,8 +162,10 @@ public class ChatListener implements Listener {
                 message = LegacyColorConverter.convertToMiniMessage(message);
             }
             finalMessage = message;
-            formattedMessage = chatFormatter.format(player, finalChannel, finalMessage, chatColor);
+            preparedMessage = chatFormatter.prepareMessage(player, finalMessage, chatColor);
         }
+        MentionManager.Result mentionResult = mentionManager.apply(player, preparedMessage, Bukkit.getOnlinePlayers());
+        formattedMessage = chatFormatter.formatPreparedMessage(player, finalChannel, mentionResult.component());
 
         Set<Player> recipients;
         if (channel.isLocalChannel()) {
@@ -172,6 +178,9 @@ public class ChatListener implements Listener {
             if (channelManager.hasChannelPermission(recipient, finalChannel)
                     && !ignoreManager.isIgnoring(recipient.getUniqueId(), player.getUniqueId())) {
                 recipient.sendMessage(formattedMessage);
+                if (mentionResult.mentionedPlayers().contains(recipient.getUniqueId())) {
+                    mentionManager.notify(recipient);
+                }
             }
         }
 
@@ -184,12 +193,20 @@ public class ChatListener implements Listener {
             Component crossServerFormatted;
             if (plugin.getItemDisplayManager() != null && plugin.getItemDisplayManager().containsPlaceholder(finalMessage)) {
                 crossServerMessage = plugin.getItemDisplayManager().processMessageForCrossServer(player, finalMessage);
-                crossServerFormatted = chatFormatter.format(player, finalChannel, crossServerMessage, chatColor);
-            } else if (!preserveIncomingComponent) {
+                Component crossServerComponent = chatFormatter.prepareMessage(player, crossServerMessage, chatColor);
+                MentionManager.Result crossServerMentions = mentionManager.apply(
+                        player,
+                        crossServerComponent,
+                        Bukkit.getOnlinePlayers()
+                );
+                crossServerFormatted = chatFormatter.formatPreparedMessage(
+                        player,
+                        finalChannel,
+                        crossServerMentions.component()
+                );
+            } else {
                 // 消息内容与本地展示一致，复用已格式化结果，避免整条格式化管线跑第二遍
                 crossServerFormatted = formattedMessage;
-            } else {
-                crossServerFormatted = chatFormatter.format(player, finalChannel, crossServerMessage, chatColor);
             }
             String formattedString = MessageUtil.toMiniMessage(crossServerFormatted);
             plugin.getCrossServerManager().sendFormattedChatMessage(finalChannel, formattedString, player.getUniqueId());

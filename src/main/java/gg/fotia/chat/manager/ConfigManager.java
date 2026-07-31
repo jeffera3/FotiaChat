@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class ConfigManager {
 
@@ -20,6 +21,14 @@ public class ConfigManager {
     private boolean debugMode;
     private boolean allowColorCodes;
     private String mutePermission;
+    private boolean mentionEnabled;
+    private boolean mentionAutoDetectPlayerName;
+    private String mentionDisplay;
+    private List<String> mentionHover;
+    private boolean mentionSoundEnabled;
+    private String mentionSoundName;
+    private float mentionSoundVolume;
+    private float mentionSoundPitch;
 
     public ConfigManager(FotiaChat plugin) {
         this.plugin = plugin;
@@ -46,6 +55,20 @@ public class ConfigManager {
         this.debugMode = config.getBoolean("debug", false);
         this.allowColorCodes = config.getBoolean("chat.allow-color-codes", true);
         this.mutePermission = config.getString("mute.permission", "");
+        this.mentionEnabled = config.getBoolean("chat.mention.enabled", true);
+        this.mentionAutoDetectPlayerName = config.getBoolean("chat.mention.auto-detect-player-name", true);
+        this.mentionDisplay = config.getString(
+                "chat.mention.display",
+                "<!i><yellow><bold>@{player}</bold></yellow>"
+        );
+        this.mentionHover = List.copyOf(config.getStringList("chat.mention.hover"));
+        this.mentionSoundEnabled = config.getBoolean("chat.mention.sound.enabled", true);
+        this.mentionSoundName = config.getString(
+                "chat.mention.sound.name",
+                "ENTITY_EXPERIENCE_ORB_PICKUP"
+        );
+        this.mentionSoundVolume = (float) Math.max(0.0D, config.getDouble("chat.mention.sound.volume", 1.0D));
+        this.mentionSoundPitch = (float) Math.max(0.0D, config.getDouble("chat.mention.sound.pitch", 1.2D));
     }
 
     private void saveDefaultConfig() {
@@ -85,5 +108,37 @@ public class ConfigManager {
 
     public String getMutePermission() {
         return mutePermission;
+    }
+
+    public boolean isMentionEnabled() {
+        return mentionEnabled;
+    }
+
+    public boolean isMentionAutoDetectPlayerName() {
+        return mentionAutoDetectPlayerName;
+    }
+
+    public String getMentionDisplay() {
+        return mentionDisplay;
+    }
+
+    public List<String> getMentionHover() {
+        return mentionHover;
+    }
+
+    public boolean isMentionSoundEnabled() {
+        return mentionSoundEnabled;
+    }
+
+    public String getMentionSoundName() {
+        return mentionSoundName;
+    }
+
+    public float getMentionSoundVolume() {
+        return mentionSoundVolume;
+    }
+
+    public float getMentionSoundPitch() {
+        return mentionSoundPitch;
     }
 }
