@@ -47,11 +47,11 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, String message) {
-        return format(playerContext(player), channel, message);
+        return format(playerContext(player), localizedChannel(channel, player), message);
     }
 
     public Component format(Player player, Channel channel, String message, ChatColor chatColor) {
-        return format(playerContext(player), channel, message, chatColor);
+        return format(playerContext(player), localizedChannel(channel, player), message, chatColor);
     }
 
     public Component format(VirtualChatSender sender, Channel channel, String message) {
@@ -59,11 +59,11 @@ public class ChatFormatter {
     }
 
     public Component format(Player player, Channel channel, Component messageComponent) {
-        return format(playerContext(player), channel, messageComponent);
+        return format(playerContext(player), localizedChannel(channel, player), messageComponent);
     }
 
     public Component format(Player player, Channel channel, Component messageComponent, ChatColor chatColor) {
-        return formatPreparedMessage(player, channel, prepareMessage(player, messageComponent, chatColor));
+        return formatPreparedMessage(player, channel, prepareMessage(player, messageComponent, chatColor), player);
     }
 
     public Component prepareMessage(Player player, Component messageComponent, ChatColor chatColor) {
@@ -83,7 +83,11 @@ public class ChatFormatter {
     }
 
     public Component formatPreparedMessage(Player player, Channel channel, Component messageComponent) {
-        return format(playerContext(player), channel, messageComponent);
+        return formatPreparedMessage(player, channel, messageComponent, player);
+    }
+
+    public Component formatPreparedMessage(Player player, Channel channel, Component messageComponent, Player viewer) {
+        return format(playerContext(player), localizedChannel(channel, viewer), messageComponent);
     }
 
     public Component format(VirtualChatSender sender, Channel channel, Component messageComponent) {
@@ -95,7 +99,12 @@ public class ChatFormatter {
         if (placeholders != null) {
             merged.putAll(placeholders);
         }
-        return format(SenderContext.fromPlayer(player).withAdditionalPlaceholders(merged), channel, message);
+        return format(SenderContext.fromPlayer(player).withAdditionalPlaceholders(merged),
+                localizedChannel(channel, player), message);
+    }
+
+    private Channel localizedChannel(Channel channel, Player viewer) {
+        return channel.localized(text -> plugin.getMessageManager().resolveConfigured(viewer, text));
     }
 
     private SenderContext playerContext(Player player) {

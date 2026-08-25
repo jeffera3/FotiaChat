@@ -1,0 +1,299 @@
+# FotiaChat 英語言語ファイル
+
+# メッセージプレフィックス
+prefix: "<!i><gradient:#FF6B6B:#4ECDC4>[FotiaChat]</gradient> "
+
+# 一般的なメッセージ
+general:
+  reload-success: "<!i><green>設定が正常にリロードされました。"
+  reload-failed: "<!i><red>構成のリロードに失敗しました: {error}"
+  no-permission: "<!i><red>このコマンドを実行する権限がありません。"
+  player-only: "<!i><red>このコマンドはプレイヤーのみが実行できます。"
+  invalid-args: "<!i><red>引数が無効です!使用率: {usage}"
+  player-not-found: "<!i><red>プレーヤーが見つかりません: {player}"
+  player-offline: "<!i><red>プレイヤー {player} はオンラインではありません!"
+
+# チャット関連のメッセージ
+chat:
+  muted: "<!i><red>ミュートされているためメッセージを送信できません。"
+  mute-expired: "<!i><green>ミュートの有効期限が切れました。メッセージを送信できるようになりました。"
+  cooldown: "<!i><red>メッセージの送信が早すぎます。 {time} 待ってから再試行してください。"
+  empty-message: "<!i><red>空のメッセージは送信できません。"
+  message-too-long: "<!i><red>メッセージが長すぎます!最大長: {max}"
+
+# 管理者コマンドメッセージ
+admin:
+  mute-success: "<!i><green>プレーヤー {player} を {duration}に対してミュートしました"
+  unmute-success: "<!i><green>ミュート解除されたプレーヤー {player}!"
+  not-muted: "<!i><yellow>プレーヤー {player} はミュートされていません!"
+  clear-chat: "<!i><gray>チャットは {player}によってクリアされました!"
+  mute-exempt: "<!i><red>プレイヤー {player} はミュートを免除されています!"
+  duration-permanent: "永久的"
+
+# チャンネル関連のメッセージ
+channel:
+  current: "<!i><gray>現在のチャンネル:<white>{channel}</white>"
+  switched: "<!i><green>チャンネルに切り替えました:<white>{channel}</white>"
+  not-found: "<!i><red>チャンネルが見つかりません: {channel}"
+  no-permission: "<!i><red>このチャンネルを使用する許可がありません。"
+  list-header: "<!i><gray>利用可能なチャンネル:"
+  list-item: "<!i><gray>- <white>{channel}</white> ({shortcut})"
+
+# 色に関するメッセージ
+color:
+  current: "<!i><gray>現在のチャットの色: {color}"
+  help: "<!i><gray>使用率: /chatcolor <colorID|list|reset>"
+  set-success: "<!i><green>チャットの色を次のように設定しました: {color}"
+  reset: "<!i><green>チャットの色をデフォルトにリセットしました!"
+  not-found: "<!i><red>色が見つかりません: {color}"
+  no-permission: "<!i><red>色を使用する権限がありません: {color}"
+  list-header: "<!i><gray>========== 利用可能な色 =========="
+  list-item: "<!i><gray>- {name} <dark_gray>({id})</dark_gray> {preview}"
+  list-footer: "<!i><gray>======================================"
+  no-colors-available: "<!i><yellow>色はありません!"
+  preview-text: "サンプルテキスト"
+  select-hover: "<!i><gray>クリックしてこの色を選択してください"
+
+# 関連メッセージのフィルタリング
+filter:
+  blocked: "<!i><red>あなたのメッセージにはデリケートな言葉が含まれているため、ブロックされました。"
+  warning: "<!i><yellow>適切な言語を使用してください。"
+
+# プライベートメッセージ関連のメッセージ
+privatemsg:
+  format-sender: "<!i><gray>[<gold>私</gold> -> <white>{target}</white>]</gray> {message}"
+  format-receiver: "<!i><gray>[<white>{sender}</white> -> <gold>私</gold>]</gray> {message}"
+  self: "<!i><red>自分自身にプライベート メッセージを送信することはできません。"
+  no-reply-target: "<!i><red>返信する人がいない！"
+  target-offline: "<!i><red>ターゲットのプレイヤーはオフラインです!"
+  target-ignoring: "<!i><red>このプレイヤーはあなたを無視しています。メッセージは送信されません。"
+  socialspy-enabled: "<!i><green>ソーシャルスパイモードが有効になりました！"
+  socialspy-disabled: "<!i><yellow>ソーシャルスパイモードが無効になりました!"
+  socialspy-format: "<!i><dark_gray>[スパイ]<gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"
+
+# クロスサーバー通信メッセージ
+crossserver:
+  chat-format: "<!i><dark_gray>[{server}]</dark_gray> <gray>[{channel}]</gray> <white>{player}</white><gray>:</gray> {message}"
+  broadcast-format: "<!i><dark_gray>[{server}]</dark_gray> <gold>{message}</gold>"
+
+# 更新チェックメッセージ
+update:
+  available: "<!i><gold>新しい FotiaChat バージョンが利用可能です。<white>{latest}</white> <gray>(現在: {current})</gray>"
+  release-url: "<!i><gray>クリックしてリリース ページを表示します。<aqua>{url}</aqua>"
+  release-hover: "<!i><yellow>クリックして GitHub Release ページを開きます"
+  console-available: "新しい FotiaChat バージョンが利用可能です: {latest} (現在: {current}) - {url}"
+  console-latest: "FotiaChat は最新です: {current}"
+  console-failed: "FotiaChat 更新チェックに失敗しました: {reason}"
+
+# お知らせ関連のメッセージ
+announcement:
+  sent: "<!i><green>送信されたアナウンス: {id}"
+  not-found: "<!i><red>アナウンスが見つかりません: {id}"
+  broadcast-success: "<!i><green>メッセージが放送されました！"
+  toggle-enabled: "<!i><green>自動アナウンスが有効になりました！"
+  toggle-disabled: "<!i><yellow>自動アナウンスが無効になっています。"
+  reloaded: "<!i><green>アナウンス設定がリロードされました。"
+  list-header: "<!i><gray>========== お知らせリスト =========="
+  list-item: "<!i><gray>- {id} [{status}] (間隔: {interval}s)"
+  usage-send: "<!i><red>使用率: /announcement send <ID>"
+  usage-broadcast: "<!i><red>使用率: /announcement broadcast <message>"
+  help-header: "<!i><gray>========== お知らせヘルプ =========="
+  help-send: "<!i><gray>/announcement send <ID> - 特定のアナウンスを送信する"
+  help-broadcast: "<!i><gray>/announcement broadcast <message> - カスタム メッセージをブロードキャストします"
+  help-list: "<!i><gray>/announcement list - すべてのお知らせをリストします"
+  help-toggle: "<!i><gray>/announcement toggle - 自動アナウンスの切り替え"
+  help-reload: "<!i><gray>/announcement reload - アナウンス設定をリロードします"
+  status-enabled: "有効"
+  status-disabled: "無効"
+
+# プレミアムモジュールのメッセージ
+premium:
+  not-installed: "<!i><red>この機能を使用するには、 FotiaChat-Premium モジュールをインストールする必要があります。"
+  feature-disabled: "<!i><red>{feature} 機能が有効になっていません!"
+
+# アイテム表示メッセージ
+item-display:
+  no-permission: "<!i><red>アイテムを表示する権限がありません。"
+  view-no-permission: "<!i><red>他の人の在庫/enderchestを表示する権限がありません!"
+  snapshot-expired: "<!i><red>このスナップショットの有効期限が切れています。"
+  inventory-title: "<!i>{player}の在庫"
+  enderchest-title: "<!i>{player}のエンダーチェスト"
+
+# 関連メッセージを無視する
+ignore:
+  added: "<!i><green> {player}からのチャット メッセージを無視しています。"
+  removed: "<!i><yellow>もう {player}を無視する必要はありません。"
+  self: "<!i><red>自分自身を無視することはできません。"
+  list-header: "<!i><gray>========== 無視されたプレイヤー =========="
+  list-item: "<!i><gray>- <white>{player}</white>"
+  list-empty: "<!i><yellow>プレイヤーを無視しているわけではありません。"
+
+mentions:
+  display: "<!i><yellow><bold>@{player}</bold></yellow>"
+  hover-player: "<!i><gray>プレイヤー:<white>{player}</white></gray>"
+  hover-sender: "<!i><gray>言及者<white>{sender}</white></gray>"
+
+channels:
+  common:
+    player-display: "<!i><white>{player}</white>"
+    player-hover: "<!i><gray>プレイヤー:<white>%player_name%</white></gray>"
+    player-click: "<!i><gray>クリックしてこのプレイヤーにメッセージを送信します</gray>"
+  global:
+    name: "グローバル"
+    display: "<!i><gray>[<white>グローバル</white>]</gray>"
+    hover-name: "<!i><gray>チャンネル:<white>{channel}</white></gray>"
+    hover-description: "<!i><gray>サーバー全体のパブリック チャット</gray>"
+  local:
+    name: "ローカル"
+    display: "<!i><gray>[<yellow>ローカル</yellow>]</gray>"
+    hover-name: "<!i><yellow>ローカルチャンネル</yellow>"
+    hover-description: "<!i><gray>近くのプレイヤーにのみ表示されます</gray>"
+  admin:
+    name: "管理者"
+    display: "<!i><gray>[<red>管理者</red>]</gray>"
+    hover-name: "<!i><red>管理者チャンネル</red>"
+    hover-description: "<!i><gray>管理者のみ</gray>"
+    player-hover: "<!i><gray>管理者:<red>%player_name%</red></gray>"
+    player-click: "<!i><gray>クリックするとプレイヤー情報が表示されます</gray>"
+  help:
+    name: "ヘルプ"
+    display: "<!i><gray>[<aqua>ヘルプ</aqua>]</gray>"
+    hover-name: "<!i><aqua>ヘルプチャンネル</aqua>"
+    hover-description: "<!i><gray>質問して助けを求める</gray>"
+    player-click: "<!i><aqua>クリックしてこのプレイヤーを助けます</aqua>"
+
+colors:
+  white: "<!i><white>ホワイト</white>"
+  gray: "<!i><gray>グレー</gray>"
+  red: "<!i><red>赤</red>"
+  green: "<!i><green>緑</green>"
+  blue: "<!i><blue>ブルー</blue>"
+  yellow: "<!i><yellow>黄色</yellow>"
+  gold: "<!i><gold>ゴールド</gold>"
+  aqua: "<!i><aqua>アクア</aqua>"
+  light-purple: "<!i><light_purple>ピンク</light_purple>"
+  sunset: "<!i><gradient:#FF6B6B:#FFE66D>夕焼けのグラデーション</gradient>"
+  ocean: "<!i><gradient:#667eea:#764ba2>オーシャングラデーション</gradient>"
+  forest: "<!i><gradient:#11998e:#38ef7d>森の勾配</gradient>"
+  fire: "<!i><gradient:#f12711:#f5af19>ファイアーグラデーション</gradient>"
+  ice: "<!i><gradient:#74ebd5:#ACB6E5>氷の勾配</gradient>"
+  rainbow: "<!i><rainbow>レインボー</rainbow>"
+
+command:
+  usage:
+    fotiachat: "/fotiachat <reload|help|version>"
+    chatignore: "/chatignore <player|list>"
+    msg: "/msg <player> <message>"
+    reply: "/reply <message>"
+    mute: "/mute <player> <duration> [reason]"
+    unmute: "/unmute <player>"
+  fotiachat:
+    help:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ヘルプ ==========</gradient>"
+      reload: "<!i><gray>/fotiachat reload - 構成をリロードします"
+      help: "<!i><gray>/fotiachat help - ヘルプを表示"
+      version: "<!i><gray>/fotiachat version - バージョン情報を表示します"
+      channel: "<!i><gray>/channel [channel] - チャンネルを表示または切り替えます"
+      chatcolor: "<!i><gray>/chatcolor [color] - チャットの色を選択します"
+      msg: "<!i><gray>/msg <player> <message> - プライベート メッセージを送信します"
+      reply: "<!i><gray>/reply <message> - プライベート メッセージに返信する"
+      mute: "<!i><gray>/mute <player> <duration> [reason] - プレーヤーをミュートします"
+      unmute: "<!i><gray>/unmute <player> - プレーヤーのミュートを解除します"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>====================================</gradient>"
+    version:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ==========</gradient>"
+      version: "<!i><gray>バージョン:<white>{version}</white>"
+      authors: "<!i><gray>著者:<white>{authors}</white>"
+      api: "<!i><gray>APIバージョン:<white>{api}</white>"
+      crossserver-enabled: "<!i><gray>クロスサーバー:<green>有効</green> <white>({type})</white>"
+      crossserver-disabled: "<!i><gray>クロスサーバー:<red>無効</red>"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>===============================</gradient>"
+
+item-gui:
+  hand-title: "<!i><aqua>{player}のアイテム</aqua>"
+  inventory-title: "<!i><gold>{player}の在庫</gold>"
+  enderchest-title: "<!i><dark_purple>{player}のエンダーチェスト</dark_purple>"
+  helmet: "<!i><gray>ヘルメット</gray>"
+  chestplate: "<!i><gray>胸当て</gray>"
+  leggings: "<!i><gray>レギンス</gray>"
+  boots: "<!i><gray>ブーツ</gray>"
+  offhand: "<!i><gray>オフハンド</gray>"
+  not-equipped: "<!i><dark_gray>未装備"
+
+item-display-text:
+  empty-hand: "<!i><gray>[空手]</gray>"
+  hand-display: "<!i><aqua>[{item_name}]</aqua>"
+  hand-hover-item: "<!i><gray>アイテム:<white>{item_name}</white></gray>"
+  hand-hover-action: "<!i><yellow>クリックして項目 GUI を開きます</yellow>"
+  inventory-display: "<!i><gold>[在庫を見る]</gold>"
+  inventory-hover-action: "<!i><yellow>クリックして {player}の在庫を表示します</yellow>"
+  enderchest-display: "<!i><dark_purple>[エンダーチェストを見る]</dark_purple>"
+  enderchest-hover-action: "<!i><light_purple>クリックして {player}のエンダーチェストを表示します</light_purple>"
+  item-count: "<!i><gray>アイテム数: {item_count}</gray>"
+
+menus:
+  common:
+    blank: ""
+  color:
+    title: "<!i><gradient:#FF6B6B:#4ECDC4>チャットの色を選択してください</gradient>"
+    select: "<!i><gray>クリックしてこの色を選択してください"
+    reset-name: "<!i><red>デフォルトの色にリセット</red>"
+    reset-lore: "<!i><gray>クリックしてチャットの色をリセットします"
+    preview:
+      white: "<!i><white>プレビュー: これは白いテキストです</white>"
+      gray: "<!i><gray>プレビュー: これは灰色のテキストです</gray>"
+      red: "<!i><red>プレビュー: これは赤いテキストです</red>"
+      green: "<!i><green>プレビュー: これは緑色のテキストです</green>"
+      blue: "<!i><blue>プレビュー: これは青いテキストです</blue>"
+      yellow: "<!i><yellow>プレビュー: これは黄色のテキストです</yellow>"
+      gold: "<!i><gold>プレビュー: これはゴールド テキストです</gold>"
+      aqua: "<!i><aqua>プレビュー: これは水色のテキストです</aqua>"
+      light-purple: "<!i><light_purple>プレビュー: これはピンク色のテキストです</light_purple>"
+      sunset: "<!i><gradient:#FF6B6B:#FFE66D>プレビュー: 日没のグラデーション テキスト</gradient>"
+      ocean: "<!i><gradient:#667eea:#764ba2>プレビュー: オーシャン グラデーション テキスト</gradient>"
+      forest: "<!i><gradient:#11998e:#38ef7d>プレビュー: フォレスト グラデーション テキスト</gradient>"
+      fire: "<!i><gradient:#f12711:#f5af19>プレビュー: 火のグラデーション テキスト</gradient>"
+      ice: "<!i><gradient:#74ebd5:#ACB6E5>プレビュー: 氷のグラデーション テキスト</gradient>"
+      rainbow: "<!i><rainbow>プレビュー: レインボーテキスト</rainbow>"
+    permission:
+      red: "<!i><yellow>必要な権限: fotiachat.color.red"
+      green: "<!i><yellow>必要な権限: fotiachat.color.green"
+      blue: "<!i><yellow>必要な権限: fotiachat.color.blue"
+      yellow: "<!i><yellow>必要な権限: fotiachat.color.yellow"
+      gold: "<!i><yellow>必要な権限: fotiachat.color.gold"
+      aqua: "<!i><yellow>必要な権限: fotiachat.color.aqua"
+      light-purple: "<!i><yellow>必要な権限: fotiachat.color.light_purple"
+      sunset: "<!i><yellow>必要な権限: fotiachat.color.gradient.sunset"
+      ocean: "<!i><yellow>必要な権限: fotiachat.color.gradient.ocean"
+      forest: "<!i><yellow>必要な権限: fotiachat.color.gradient.forest"
+      fire: "<!i><yellow>必要な権限: fotiachat.color.gradient.fire"
+      ice: "<!i><yellow>必要な権限: fotiachat.color.gradient.ice"
+      rainbow: "<!i><yellow>必要な権限: fotiachat.color.rainbow"
+
+configured-announcements:
+  welcome:
+    border: "<!i><gradient:#FF6B6B:#4ECDC4>========================================</gradient>"
+    title: "<!i><white>       サーバーへようこそ!</white>"
+    subtitle: "<!i><gray>       楽しい時間をお過ごしください!</gray>"
+  rules:
+    civil: "<!i><yellow>【ヒント】</yellow> <gray>サーバーのルールに従い、敬意を持ってください。</gray>"
+    cheating: "<!i><yellow>【ヒント】</yellow> <gray>チートや無断改造は禁止です！</gray>"
+    support: "<!i><yellow>【ヒント】</yellow> <gray>サポートが必要な場合は、管理者に連絡してください。</gray>"
+  vip:
+    message: "<!i><gold>[VIP]</gold> <yellow>ご支援ありがとうございます！メリットをお楽しみください。</yellow>"
+    hover-title: "<!i><gold>VIP特典</gold>"
+    hover-action: "<!i><gray>クリックして詳細を表示</gray>"
+  event:
+    title: "<!i><light_purple>★</light_purple> <gradient:#FF6B6B:#FFE66D>期間限定イベント開催中！</gradient> <light_purple>★</light_purple>"
+    action: "<!i><gray>クリックしてイベントの詳細を表示します</gray>"
+    hover-title: "<!i><gradient:#FF6B6B:#FFE66D>期間限定イベント</gradient>"
+    hover-time: "<!i><gray>イベント時間: 2024/1/1 - 2024/1/7</gray>"
+    hover-action: "<!i><yellow>クリックして参加してください！</yellow>"
+  website:
+    message: "<!i><aqua>【ウェブサイト】</aqua> <white>詳細については、公式ウェブサイトをご覧ください。</white>"
+    hover-title: "<!i><aqua>クリックしてウェブサイトにアクセスします</aqua>"
+    hover-address: "<!i><gray>www.example.com</gray>"
+  help:
+    message: "<!i><green>[ヘルプ]</green> <gray>助けが必要ですか?ここをクリック！</gray>"
+    hover-title: "<!i><green>助けてもらう</green>"
+    hover-action: "<!i><gray>クリックしてヘルプ コマンドを入力します</gray>"

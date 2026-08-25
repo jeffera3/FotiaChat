@@ -33,6 +33,10 @@ public class MentionManager {
     }
 
     public Result apply(Player sender, Component message, Collection<? extends Player> onlinePlayers) {
+        return apply(sender, message, onlinePlayers, sender);
+    }
+
+    public Result apply(Player sender, Component message, Collection<? extends Player> onlinePlayers, Player viewer) {
         ConfigManager config = plugin.getConfigManager();
         Component safeMessage = message == null ? Component.empty() : message;
         boolean hasPermission = sender != null && sender.hasPermission(USE_PERMISSION);
@@ -66,7 +70,7 @@ public class MentionManager {
         MentionComponentDecorator.Result decorated = MentionComponentDecorator.decorate(
                 safeMessage,
                 matches,
-                playerName -> createMentionComponent(sender, playerName)
+                playerName -> createMentionComponent(sender, playerName, viewer)
         );
         Set<UUID> mentionedPlayers = decorated.mentionedPlayerNames().stream()
                 .map(name -> playersByName.get(name.toLowerCase(Locale.ROOT)))
@@ -100,10 +104,16 @@ public class MentionManager {
         }
     }
 
-    private Component createMentionComponent(Player sender, String playerName) {
+    private Component createMentionComponent(Player sender, String playerName, Player viewer) {
         ConfigManager config = plugin.getConfigManager();
-        Component mention = parseConfiguredText(config.getMentionDisplay(), sender, playerName);
-        List<String> hoverLines = config.getMentionHover();
+        Component mention = parseConfiguredText(
+                plugin.getMessageManager().resolveConfigured(viewer, config.getMentionDisplay()),
+                sender,
+                playerName
+        );
+        List<String> hoverLines = config.getMentionHover().stream()
+                .map(line -> plugin.getMessageManager().resolveConfigured(viewer, line))
+                .toList();
         if (hoverLines.isEmpty()) {
             return mention;
         }

@@ -69,7 +69,8 @@ public class ChatColorCommand implements CommandExecutor, TabCompleter {
                 // 尝试设置颜色
                 if (colorManager.setPlayerColor(player, subCommand)) {
                     ChatColor color = colorManager.getColor(subCommand);
-                    Map<String, String> placeholders = Map.of("color", color.getName());
+                    Map<String, String> placeholders = Map.of("color",
+                            colorManager.getDisplayName(player, color));
                     messageManager.send(player, "color.set-success", placeholders);
                 } else {
                     ChatColor color = colorManager.getColor(subCommand);
@@ -77,7 +78,8 @@ public class ChatColorCommand implements CommandExecutor, TabCompleter {
                         Map<String, String> placeholders = Map.of("color", subCommand);
                         messageManager.send(player, "color.not-found", placeholders);
                     } else {
-                        Map<String, String> placeholders = Map.of("color", color.getName());
+                        Map<String, String> placeholders = Map.of("color",
+                                colorManager.getDisplayName(player, color));
                         messageManager.send(player, "color.no-permission", placeholders);
                     }
                 }
@@ -101,15 +103,15 @@ public class ChatColorCommand implements CommandExecutor, TabCompleter {
 
         for (ChatColor color : availableColors) {
             // 创建可点击的颜色项
-            String preview = color.apply("示例文字");
-            Component colorComponent = plugin.getMessageManager().get("color.list-item",
-                    Map.of("id", color.getId(), "name", color.getName(), "preview", preview));
+            String preview = color.apply(messageManager.getRaw(player, "color.preview-text"));
+            String displayName = colorManager.getDisplayName(player, color);
+            Component colorComponent = messageManager.get("color.list-item", player,
+                    Map.of("id", color.getId(), "name", displayName, "preview", preview));
 
             // 添加点击事件
             colorComponent = colorComponent
                     .clickEvent(ClickEvent.runCommand("/chatcolor " + color.getId()))
-                    .hoverEvent(HoverEvent.showText(
-                            Component.text("点击选择此颜色")));
+                    .hoverEvent(HoverEvent.showText(messageManager.get("color.select-hover", player)));
 
             player.sendMessage(colorComponent);
         }

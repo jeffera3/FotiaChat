@@ -1,9 +1,15 @@
 # FotiaChat 配置文件
 # 高级聊天管理插件
 
-# 语言设置
-# 可选: zh_CN, en_US
-language: zh_CN
+# 本地化设置
+localization:
+  # 玩家客户端语言不受支持、控制台消息或日志使用的默认语言
+  # 可选: zh_CN, zh_TW, ja_JP, ko_KR, en_US, fr_FR, de_DE, it_IT, pt_PT, es_ES
+  default-locale: zh_CN
+  # 根据玩家客户端语言分别显示消息和GUI文字
+  use-client-locale: true
+  # 缺少翻译键时在控制台输出一次警告
+  warn-missing-translation: true
 
 # 调试模式
 # 开启后会输出更多日志信息
@@ -40,11 +46,11 @@ chat:
     # 是否将消息中的完整玩家名自动识别为艾特；关闭后必须输入 @玩家名
     auto-detect-player-name: true
     # 艾特在聊天中的显示格式，支持 {player}（被艾特玩家）和 {sender}（发送者）
-    display: "<!i><yellow><bold>@{player}</bold></yellow>"
+    display: "lang:mentions.display"
     # 鼠标悬停文本，支持 MiniMessage、旧颜色码、{player} 和 {sender}
     hover:
-      - "<!i><gray>玩家: <white>{player}</white></gray>"
-      - "<!i><gray>由 <white>{sender}</white> 艾特</gray>"
+      - "lang:mentions.hover-player"
+      - "lang:mentions.hover-sender"
     # 只有实际收到该频道消息的被艾特玩家才会播放提示音
     sound:
       enabled: true

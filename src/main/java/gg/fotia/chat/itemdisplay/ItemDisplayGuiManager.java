@@ -1,7 +1,7 @@
 package gg.fotia.chat.itemdisplay;
 
 import gg.fotia.chat.FotiaChat;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -19,30 +19,32 @@ import java.util.UUID;
 public class ItemDisplayGuiManager {
 
     private final FotiaChat plugin;
-    private final MiniMessage miniMessage;
     private FileConfiguration config;
 
     private String handTitle;
+    private String handTitleKey;
     private List<String> handLayout;
     private ConfigurationSection handIcons;
 
     private String invTitle;
+    private String invTitleKey;
     private List<String> invLayout;
     private ConfigurationSection invIcons;
 
     private String ecTitle;
+    private String ecTitleKey;
     private List<String> ecLayout;
     private ConfigurationSection ecIcons;
 
     public ItemDisplayGuiManager(FotiaChat plugin) {
         this.plugin = plugin;
-        this.miniMessage = MiniMessage.miniMessage();
     }
 
     public void load(FileConfiguration config) {
         this.config = config;
 
         handTitle = config.getString("hand-item.gui.Title", "<!i><aqua>{player}'s Item</aqua>");
+        handTitleKey = config.getString("hand-item.gui.Title-Key", "");
         handLayout = config.getStringList("hand-item.gui.Layout");
         if (handLayout == null || handLayout.isEmpty()) {
             handLayout = List.of("#########", "####i####", "#########");
@@ -52,6 +54,7 @@ public class ItemDisplayGuiManager {
         ConfigurationSection invSection = config.getConfigurationSection("inventory.gui");
         if (invSection != null) {
             invTitle = invSection.getString("Title", "<!i><gold>{player} Inventory</gold>");
+            invTitleKey = invSection.getString("Title-Key", "");
             invLayout = invSection.getStringList("Layout");
             invIcons = invSection.getConfigurationSection("Icons");
         }
@@ -59,45 +62,46 @@ public class ItemDisplayGuiManager {
         ConfigurationSection ecSection = config.getConfigurationSection("enderchest.gui");
         if (ecSection != null) {
             ecTitle = ecSection.getString("Title", "<!i><dark_purple>{player} Ender Chest</dark_purple>");
+            ecTitleKey = ecSection.getString("Title-Key", "");
             ecLayout = ecSection.getStringList("Layout");
             ecIcons = ecSection.getConfigurationSection("Icons");
         }
     }
 
     public void openHandItemGui(Player viewer, ItemSnapshot snapshot) {
-        String title = resolveTitle(handTitle, snapshot);
+        String title = resolveTitle(viewer, handTitleKey, handTitle, snapshot);
         int size = Math.max(9, handLayout.size() * 9);
         ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
-        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        Inventory gui = Bukkit.createInventory(holder, size, MessageUtil.parse(title, viewer));
         holder.setInventory(gui);
 
-        fillInventoryFromLayout(gui, handLayout, handIcons, snapshot.contents());
+        fillInventoryFromLayout(viewer, gui, handLayout, handIcons, snapshot.contents());
         viewer.openInventory(gui);
     }
 
     public void openInventoryGui(Player viewer, ItemSnapshot snapshot) {
-        String title = resolveTitle(invTitle, snapshot);
+        String title = resolveTitle(viewer, invTitleKey, invTitle, snapshot);
         int size = invLayout.size() * 9;
         ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
-        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        Inventory gui = Bukkit.createInventory(holder, size, MessageUtil.parse(title, viewer));
         holder.setInventory(gui);
 
-        fillInventoryFromLayout(gui, invLayout, invIcons, snapshot.contents());
+        fillInventoryFromLayout(viewer, gui, invLayout, invIcons, snapshot.contents());
         viewer.openInventory(gui);
     }
 
     public void openEnderchestGui(Player viewer, ItemSnapshot snapshot) {
-        String title = resolveTitle(ecTitle, snapshot);
+        String title = resolveTitle(viewer, ecTitleKey, ecTitle, snapshot);
         int size = ecLayout.size() * 9;
         ItemDisplayHolder holder = new ItemDisplayHolder(snapshot.id());
-        Inventory gui = Bukkit.createInventory(holder, size, miniMessage.deserialize(title));
+        Inventory gui = Bukkit.createInventory(holder, size, MessageUtil.parse(title, viewer));
         holder.setInventory(gui);
 
-        fillInventoryFromLayout(gui, ecLayout, ecIcons, snapshot.contents());
+        fillInventoryFromLayout(viewer, gui, ecLayout, ecIcons, snapshot.contents());
         viewer.openInventory(gui);
     }
 
-    private void fillInventoryFromLayout(Inventory gui, List<String> layout, ConfigurationSection icons,
+    private void fillInventoryFromLayout(Player viewer, Inventory gui, List<String> layout, ConfigurationSection icons,
                                          ItemStack[] contents) {
         if (layout == null || layout.isEmpty() || icons == null) {
             return;
@@ -121,12 +125,12 @@ public class ItemDisplayGuiManager {
 
                 String iconType = iconSection.getString("type", "");
                 ItemStack item = switch (iconType) {
-                    case "armor_helmet" -> getArmorItem(contents, 39, iconSection);
-                    case "armor_chestplate" -> getArmorItem(contents, 38, iconSection);
-                    case "armor_leggings" -> getArmorItem(contents, 37, iconSection);
-                    case "armor_boots" -> getArmorItem(contents, 36, iconSection);
-                    case "offhand" -> getArmorItem(contents, 40, iconSection);
-                    case "hand_item" -> getSingleItem(contents, iconSection);
+                    case "armor_helmet" -> getArmorItem(viewer, contents, 39, iconSection);
+                    case "armor_chestplate" -> getArmorItem(viewer, contents, 38, iconSection);
+                    case "armor_leggings" -> getArmorItem(viewer, contents, 37, iconSection);
+                    case "armor_boots" -> getArmorItem(viewer, contents, 36, iconSection);
+                    case "offhand" -> getArmorItem(viewer, contents, 40, iconSection);
+                    case "hand_item" -> getSingleItem(viewer, contents, iconSection);
                     case "inventory" -> {
                         if (inventoryIndex < 36 && inventoryIndex < contents.length) {
                             ItemStack invItem = contents[inventoryIndex++];
@@ -148,7 +152,7 @@ public class ItemDisplayGuiManager {
                         }
                         yield null;
                     }
-                    default -> createStaticItem(iconSection);
+                    default -> createStaticItem(viewer, iconSection);
                 };
 
                 if (item != null) {
@@ -158,37 +162,38 @@ public class ItemDisplayGuiManager {
         }
     }
 
-    private ItemStack getArmorItem(ItemStack[] contents, int armorSlot, ConfigurationSection iconSection) {
+    private ItemStack getArmorItem(Player viewer, ItemStack[] contents, int armorSlot,
+                                   ConfigurationSection iconSection) {
         if (armorSlot < contents.length && contents[armorSlot] != null) {
             return contents[armorSlot].clone();
         }
         ConfigurationSection emptySection = iconSection.getConfigurationSection("empty");
         if (emptySection != null) {
-            return createItemFromSection(emptySection);
+            return createItemFromSection(viewer, emptySection);
         }
         return null;
     }
 
-    private ItemStack getSingleItem(ItemStack[] contents, ConfigurationSection iconSection) {
+    private ItemStack getSingleItem(Player viewer, ItemStack[] contents, ConfigurationSection iconSection) {
         if (contents.length > 0 && contents[0] != null) {
             return contents[0].clone();
         }
         ConfigurationSection emptySection = iconSection.getConfigurationSection("empty");
         if (emptySection != null) {
-            return createItemFromSection(emptySection);
+            return createItemFromSection(viewer, emptySection);
         }
         return null;
     }
 
-    private ItemStack createStaticItem(ConfigurationSection iconSection) {
+    private ItemStack createStaticItem(Player viewer, ConfigurationSection iconSection) {
         ConfigurationSection displaySection = iconSection.getConfigurationSection("display");
         if (displaySection != null) {
-            return createItemFromSection(displaySection);
+            return createItemFromSection(viewer, displaySection);
         }
         return null;
     }
 
-    private ItemStack createItemFromSection(ConfigurationSection section) {
+    private ItemStack createItemFromSection(Player viewer, ConfigurationSection section) {
         String materialStr = section.getString("material", "STONE");
         Material material = Material.matchMaterial(materialStr);
         if (material == null) {
@@ -198,16 +203,17 @@ public class ItemDisplayGuiManager {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            String name = section.getString("name", "");
+            String name = resolveConfigured(viewer, section.getString("Name-Key", ""),
+                    section.getString("name", ""));
             if (!name.isEmpty()) {
-                meta.displayName(miniMessage.deserialize(name));
+                meta.displayName(MessageUtil.parse(name, viewer));
             }
 
-            List<String> loreStrings = section.getStringList("lore");
+            List<String> loreStrings = resolveLore(viewer, section);
             if (!loreStrings.isEmpty()) {
                 List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
                 for (String line : loreStrings) {
-                    lore.add(miniMessage.deserialize(line));
+                    lore.add(MessageUtil.parse(line, viewer));
                 }
                 meta.lore(lore);
             }
@@ -218,12 +224,35 @@ public class ItemDisplayGuiManager {
         return item;
     }
 
-    private String resolveTitle(String titleTemplate, ItemSnapshot snapshot) {
+    private String resolveTitle(Player viewer, String titleKey, String titleTemplate, ItemSnapshot snapshot) {
+        titleTemplate = resolveConfigured(viewer, titleKey, titleTemplate);
         String safeTitle = titleTemplate == null ? "<!i><gray>Item Preview</gray>" : titleTemplate;
         ItemStack displayItem = snapshot.contents().length > 0 ? snapshot.contents()[0] : null;
         return safeTitle.replace("{player}", snapshot.playerName())
                 .replace("{item_name}", getItemName(displayItem))
                 .replace("{amount}", displayItem == null ? "0" : String.valueOf(displayItem.getAmount()));
+    }
+
+    private String resolveConfigured(Player viewer, String key, String fallback) {
+        if (key != null && !key.isBlank()) {
+            return plugin.getMessageManager().getRaw(viewer, key);
+        }
+        return fallback;
+    }
+
+    private List<String> resolveLore(Player viewer, ConfigurationSection section) {
+        List<String> loreKeys = section.getStringList("Lore-Keys");
+        if (loreKeys.isEmpty()) {
+            return section.getStringList("lore");
+        }
+
+        List<String> resolved = new ArrayList<>(loreKeys.size());
+        for (String key : loreKeys) {
+            if (key != null && !key.isBlank()) {
+                resolved.add(plugin.getMessageManager().getRaw(viewer, key));
+            }
+        }
+        return resolved;
     }
 
     private String getItemName(ItemStack item) {

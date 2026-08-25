@@ -3,7 +3,6 @@ package gg.fotia.chat.privatemsg;
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.api.VirtualPrivateMessageProvider;
 import gg.fotia.chat.api.VirtualPrivateMessageTarget;
-import gg.fotia.chat.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -286,17 +285,17 @@ public class PrivateMessageManager {
     }
 
     private void sendSenderEcho(Player sender, String targetName, String message) {
-        String senderFormat = plugin.getMessageManager().getRaw("privatemsg.format-sender");
-        senderFormat = senderFormat.replace("{target}", targetName);
-        senderFormat = senderFormat.replace("{message}", message);
-        sender.sendMessage(MessageUtil.parse(senderFormat, sender));
+        sender.sendMessage(plugin.getMessageManager().get("privatemsg.format-sender", sender, Map.of(
+                "target", targetName,
+                "message", message
+        )));
     }
 
     private void sendReceiverEcho(Player target, String senderName, String message) {
-        String targetFormat = plugin.getMessageManager().getRaw("privatemsg.format-receiver");
-        targetFormat = targetFormat.replace("{sender}", senderName);
-        targetFormat = targetFormat.replace("{message}", message);
-        target.sendMessage(MessageUtil.parse(targetFormat, target));
+        target.sendMessage(plugin.getMessageManager().get("privatemsg.format-receiver", target, Map.of(
+                "sender", senderName,
+                "message", message
+        )));
     }
 
     private final class ResolvedPrivateTarget {

@@ -1,8 +1,6 @@
 package gg.fotia.chat.command;
 
 import gg.fotia.chat.FotiaChat;
-import gg.fotia.chat.util.MessageUtil;
-import net.kyori.adventure.text.Component;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -50,7 +48,7 @@ public class FotiaChatCommand implements CommandExecutor, TabCompleter {
             case "viewsnapshot" -> handleViewSnapshot(sender, args);
             default -> {
                 plugin.getMessageManager().send(sender, "general.invalid-args",
-                        Map.of("usage", "/fotiachat <reload|help|version>"));
+                        Map.of("usage", getRaw(sender, "command.usage.fotiachat")));
             }
         }
 
@@ -70,7 +68,8 @@ public class FotiaChatCommand implements CommandExecutor, TabCompleter {
             plugin.reload();
             plugin.getMessageManager().send(sender, "general.reload-success");
         } catch (Exception e) {
-            sender.sendMessage(MessageUtil.parse("<!i><red>重载配置时发生错误: " + e.getMessage()));
+            plugin.getMessageManager().send(sender, "general.reload-failed",
+                    Map.of("error", String.valueOf(e.getMessage())));
             plugin.getLogger().severe("重载配置失败: " + e.getMessage());
             e.printStackTrace();
         }
@@ -80,22 +79,22 @@ public class FotiaChatCommand implements CommandExecutor, TabCompleter {
      * 显示帮助信息
      */
     private void showHelp(CommandSender sender) {
-        List<String> helpLines = Arrays.asList(
-                "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat 帮助 ==========</gradient>",
-                "<!i><gray>/fotiachat reload</gray> <dark_gray>-</dark_gray> <white>重载配置文件</white>",
-                "<!i><gray>/fotiachat help</gray> <dark_gray>-</dark_gray> <white>显示帮助信息</white>",
-                "<!i><gray>/fotiachat version</gray> <dark_gray>-</dark_gray> <white>显示版本信息</white>",
-                "<!i><gray>/channel [频道]</gray> <dark_gray>-</dark_gray> <white>切换聊天频道</white>",
-                "<!i><gray>/chatcolor [颜色]</gray> <dark_gray>-</dark_gray> <white>设置聊天颜色</white>",
-                "<!i><gray>/msg <玩家> <消息></gray> <dark_gray>-</dark_gray> <white>发送私聊</white>",
-                "<!i><gray>/reply <消息></gray> <dark_gray>-</dark_gray> <white>回复私聊</white>",
-                "<!i><gray>/mute <玩家> [时长] [原因]</gray> <dark_gray>-</dark_gray> <white>禁言玩家</white>",
-                "<!i><gray>/unmute <玩家></gray> <dark_gray>-</dark_gray> <white>解除禁言</white>",
-                "<!i><gradient:#FF6B6B:#4ECDC4>====================================</gradient>"
+        List<String> helpKeys = List.of(
+                "command.fotiachat.help.header",
+                "command.fotiachat.help.reload",
+                "command.fotiachat.help.help",
+                "command.fotiachat.help.version",
+                "command.fotiachat.help.channel",
+                "command.fotiachat.help.chatcolor",
+                "command.fotiachat.help.msg",
+                "command.fotiachat.help.reply",
+                "command.fotiachat.help.mute",
+                "command.fotiachat.help.unmute",
+                "command.fotiachat.help.footer"
         );
 
-        for (String line : helpLines) {
-            sender.sendMessage(MessageUtil.parse(line));
+        for (String key : helpKeys) {
+            plugin.getMessageManager().send(sender, key);
         }
     }
 
@@ -106,19 +105,27 @@ public class FotiaChatCommand implements CommandExecutor, TabCompleter {
         String version = plugin.getDescription().getVersion();
         String author = String.join(", ", plugin.getDescription().getAuthors());
 
-        List<String> versionLines = Arrays.asList(
-                "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ==========</gradient>",
-                "<!i><gray>版本:</gray> <white>" + version + "</white>",
-                "<!i><gray>作者:</gray> <white>" + author + "</white>",
-                "<!i><gray>API版本:</gray> <white>" + plugin.getDescription().getAPIVersion() + "</white>",
-                "<!i><gray>跨服通信:</gray> <white>" + (plugin.getCrossServerManager().isEnabled() ?
-                        "已启用 (" + plugin.getCrossServerManager().getType() + ")" : "已禁用") + "</white>",
-                "<!i><gradient:#FF6B6B:#4ECDC4>===============================</gradient>"
-        );
-
-        for (String line : versionLines) {
-            sender.sendMessage(MessageUtil.parse(line));
+        plugin.getMessageManager().send(sender, "command.fotiachat.version.header");
+        plugin.getMessageManager().send(sender, "command.fotiachat.version.version",
+                Map.of("version", version));
+        plugin.getMessageManager().send(sender, "command.fotiachat.version.authors",
+                Map.of("authors", author));
+        plugin.getMessageManager().send(sender, "command.fotiachat.version.api",
+                Map.of("api", String.valueOf(plugin.getDescription().getAPIVersion())));
+        if (plugin.getCrossServerManager().isEnabled()) {
+            plugin.getMessageManager().send(sender, "command.fotiachat.version.crossserver-enabled",
+                    Map.of("type", plugin.getCrossServerManager().getType()));
+        } else {
+            plugin.getMessageManager().send(sender, "command.fotiachat.version.crossserver-disabled");
         }
+        plugin.getMessageManager().send(sender, "command.fotiachat.version.footer");
+    }
+
+    private String getRaw(CommandSender sender, String key) {
+        if (sender instanceof Player player) {
+            return plugin.getMessageManager().getRaw(player, key);
+        }
+        return plugin.getMessageManager().getRaw(key);
     }
 
     /**

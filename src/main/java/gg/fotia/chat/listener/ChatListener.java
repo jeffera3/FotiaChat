@@ -10,7 +10,6 @@ import gg.fotia.chat.ignore.IgnoreManager;
 import gg.fotia.chat.mention.MentionManager;
 import gg.fotia.chat.util.LegacyColorConverter;
 import gg.fotia.chat.util.ComponentTextTransformer;
-import gg.fotia.chat.util.MessageUtil;
 import io.papermc.paper.event.player.AsyncChatDecorateEvent;
 import io.papermc.paper.event.player.ChatEvent;
 import net.kyori.adventure.text.Component;
@@ -146,7 +145,7 @@ public class ChatListener implements Listener {
 
         final String finalMessage;
         final Component preparedMessage;
-        final Component formattedMessage;
+        final Component defaultFormattedMessage;
 
         ChatColor chatColor = plugin.getColorManager().getPlayerColor(player);
         if (preserveIncomingComponent) {
@@ -164,8 +163,16 @@ public class ChatListener implements Listener {
             finalMessage = message;
             preparedMessage = chatFormatter.prepareMessage(player, finalMessage, chatColor);
         }
+        if (plugin.interceptRoutedChat(player, finalChannel, observedMessage, preparedMessage)) {
+            return;
+        }
         MentionManager.Result mentionResult = mentionManager.apply(player, preparedMessage, Bukkit.getOnlinePlayers());
-        formattedMessage = chatFormatter.formatPreparedMessage(player, finalChannel, mentionResult.component());
+        defaultFormattedMessage = chatFormatter.formatPreparedMessage(
+                player,
+                finalChannel,
+                mentionResult.component(),
+                null
+        );
 
         Set<Player> recipients;
         if (channel.isLocalChannel()) {
@@ -177,39 +184,35 @@ public class ChatListener implements Listener {
         for (Player recipient : recipients) {
             if (channelManager.hasChannelPermission(recipient, finalChannel)
                     && !ignoreManager.isIgnoring(recipient.getUniqueId(), player.getUniqueId())) {
-                recipient.sendMessage(formattedMessage);
+                MentionManager.Result localizedMentions = mentionManager.apply(
+                        player,
+                        preparedMessage,
+                        Bukkit.getOnlinePlayers(),
+                        recipient
+                );
+                Component localizedMessage = chatFormatter.formatPreparedMessage(
+                        player,
+                        finalChannel,
+                        localizedMentions.component(),
+                        recipient
+                );
+                recipient.sendMessage(localizedMessage);
                 if (mentionResult.mentionedPlayers().contains(recipient.getUniqueId())) {
                     mentionManager.notify(recipient);
                 }
             }
         }
 
-        Bukkit.getConsoleSender().sendMessage(formattedMessage);
-        plugin.notifyPublicChatObservers(player, finalChannel, observedMessage, formattedMessage);
+        Bukkit.getConsoleSender().sendMessage(defaultFormattedMessage);
+        plugin.notifyPublicChatObservers(player, finalChannel, observedMessage, defaultFormattedMessage);
 
         // 本地/范围频道不参与跨服转发，避免"附近聊天"泄漏到其他服务器
         if (plugin.getCrossServerManager().isEnabled() && finalChannel.isCrossServerEnabled()) {
             String crossServerMessage = preserveIncomingComponent ? PLAIN_TEXT.serialize(workingMessageComponent) : finalMessage;
-            Component crossServerFormatted;
             if (plugin.getItemDisplayManager() != null && plugin.getItemDisplayManager().containsPlaceholder(finalMessage)) {
                 crossServerMessage = plugin.getItemDisplayManager().processMessageForCrossServer(player, finalMessage);
-                Component crossServerComponent = chatFormatter.prepareMessage(player, crossServerMessage, chatColor);
-                MentionManager.Result crossServerMentions = mentionManager.apply(
-                        player,
-                        crossServerComponent,
-                        Bukkit.getOnlinePlayers()
-                );
-                crossServerFormatted = chatFormatter.formatPreparedMessage(
-                        player,
-                        finalChannel,
-                        crossServerMentions.component()
-                );
-            } else {
-                // 消息内容与本地展示一致，复用已格式化结果，避免整条格式化管线跑第二遍
-                crossServerFormatted = formattedMessage;
             }
-            String formattedString = MessageUtil.toMiniMessage(crossServerFormatted);
-            plugin.getCrossServerManager().sendFormattedChatMessage(finalChannel, formattedString, player.getUniqueId());
+            plugin.getCrossServerManager().sendChatMessage(player, finalChannel, crossServerMessage);
         }
     }
 

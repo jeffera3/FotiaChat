@@ -8,6 +8,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,7 +82,12 @@ public class AnnouncementCommand implements CommandExecutor, TabCompleter {
             case "list" -> {
                 messageManager.send(sender, "announcement.list-header");
                 for (Announcement announcement : announcementManager.getAnnouncements().values()) {
-                    String status = announcement.isEnabled() ? "<green>启用</green>" : "<red>禁用</red>";
+                    String statusKey = announcement.isEnabled()
+                            ? "announcement.status-enabled"
+                            : "announcement.status-disabled";
+                    String status = sender instanceof Player player
+                            ? messageManager.getRaw(player, statusKey)
+                            : messageManager.getRaw(statusKey);
                     messageManager.send(sender, "announcement.list-item", Map.of(
                             "id", announcement.getId(),
                             "status", status,

@@ -20,7 +20,7 @@ public class MessageUtil {
         if (message == null || message.isEmpty()) {
             return Component.empty();
         }
-        return MINI_MESSAGE.deserialize(message);
+        return MINI_MESSAGE.deserialize(LegacyColorConverter.convertToMiniMessage(message));
     }
 
     /**
@@ -36,7 +36,7 @@ public class MessageUtil {
             message = PlaceholderAPI.setPlaceholders(player, message);
         }
 
-        return MINI_MESSAGE.deserialize(message);
+        return MINI_MESSAGE.deserialize(LegacyColorConverter.convertToMiniMessage(message));
     }
 
     /**

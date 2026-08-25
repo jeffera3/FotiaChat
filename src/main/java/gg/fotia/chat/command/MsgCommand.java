@@ -46,7 +46,7 @@ public class MsgCommand implements CommandExecutor, TabCompleter {
 
         if (args.length < 2) {
             plugin.getMessageManager().send(player, "general.invalid-args",
-                    Map.of("usage", "/msg <玩家> <消息>"));
+                    Map.of("usage", plugin.getMessageManager().getRaw(player, "command.usage.msg")));
             return true;
         }
 

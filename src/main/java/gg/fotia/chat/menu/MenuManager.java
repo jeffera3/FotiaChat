@@ -1,12 +1,16 @@
 package gg.fotia.chat.menu;
 
 import gg.fotia.chat.FotiaChat;
+import gg.fotia.chat.color.ChatColor;
 import gg.fotia.chat.util.MessageUtil;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,13 +41,22 @@ public class MenuManager {
             for (File file : menuFiles) {
                 String menuId = file.getName().replace(".yml", "");
                 YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+                try (InputStream stream = plugin.getResource("menus/" + file.getName())) {
+                    if (stream != null) {
+                        config.setDefaults(YamlConfiguration.loadConfiguration(
+                                new InputStreamReader(stream, StandardCharsets.UTF_8)));
+                    }
+                } catch (Exception exception) {
+                    plugin.getLogger().warning("读取菜单默认配置失败 " + file.getName() + ": "
+                            + exception.getMessage());
+                }
                 // menus 目录也包含 item-display.yml；缺少 Layout/Icons 的文件不是通用菜单
                 if (!config.isList("Layout") || config.getStringList("Layout").isEmpty()
                         || !config.isConfigurationSection("Icons")) {
                     plugin.getLogger().fine("跳过非菜单配置: " + file.getName());
                     continue;
                 }
-                Menu menu = new Menu(menuId, config);
+                Menu menu = new Menu(menuId, config, plugin.getMessageManager());
                 menus.put(menuId, menu);
             }
         }
@@ -147,9 +160,10 @@ public class MenuManager {
             case "set_color", "color" -> {
                 // 设置聊天颜色
                 plugin.getColorManager().setPlayerColor(player, value);
-                Map<String, String> placeholders = Map.of("color",
-                        plugin.getColorManager().getColor(value) != null
-                                ? plugin.getColorManager().getColor(value).getName() : value);
+                ChatColor color = plugin.getColorManager().getColor(value);
+                Map<String, String> placeholders = Map.of("color", color == null
+                        ? value
+                        : plugin.getColorManager().getDisplayName(player, color));
                 plugin.getMessageManager().send(player, "color.set-success", placeholders);
             }
 

@@ -18,6 +18,8 @@ public class ConfigManager {
 
     // 配置项
     private String language;
+    private boolean useClientLocale;
+    private boolean warnMissingTranslation;
     private boolean debugMode;
     private boolean allowColorCodes;
     private String mutePermission;
@@ -51,7 +53,10 @@ public class ConfigManager {
         }
 
         // 读取配置项
-        this.language = config.getString("language", "zh_CN");
+        this.language = config.getString("localization.default-locale",
+                config.getString("language", "zh_CN"));
+        this.useClientLocale = config.getBoolean("localization.use-client-locale", true);
+        this.warnMissingTranslation = config.getBoolean("localization.warn-missing-translation", true);
         this.debugMode = config.getBoolean("debug", false);
         this.allowColorCodes = config.getBoolean("chat.allow-color-codes", true);
         this.mutePermission = config.getString("mute.permission", "");
@@ -96,6 +101,14 @@ public class ConfigManager {
 
     public String getLanguage() {
         return language;
+    }
+
+    public boolean isUseClientLocale() {
+        return useClientLocale;
+    }
+
+    public boolean isWarnMissingTranslation() {
+        return warnMissingTranslation;
     }
 
     public boolean isDebugMode() {

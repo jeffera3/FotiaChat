@@ -1,5 +1,6 @@
 package gg.fotia.chat.menu;
 
+import gg.fotia.chat.manager.MessageManager;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -18,16 +19,24 @@ public class Menu implements InventoryHolder {
 
     private final String id;
     private final String title;
+    private final String titleKey;
     private final List<String> layout;
     private final Map<Character, MenuIcon> icons;
     private final int size;
+    private final MessageManager messageManager;
     private Inventory inventory;
 
     public Menu(String id, FileConfiguration config) {
+        this(id, config, null);
+    }
+
+    public Menu(String id, FileConfiguration config, MessageManager messageManager) {
         this.id = id;
         this.title = config.getString("Title", "菜单");
+        this.titleKey = config.getString("Title-Key", "");
         this.layout = config.getStringList("Layout");
         this.icons = new HashMap<>();
+        this.messageManager = messageManager;
 
         // 计算菜单大小
         this.size = Math.min(layout.size() * 9, 54);
@@ -39,7 +48,7 @@ public class Menu implements InventoryHolder {
                 if (key.length() == 1) {
                     ConfigurationSection iconSection = iconsSection.getConfigurationSection(key);
                     if (iconSection != null) {
-                        icons.put(key.charAt(0), new MenuIcon(key, iconSection));
+                        icons.put(key.charAt(0), new MenuIcon(key, iconSection, messageManager));
                     }
                 }
             }
@@ -90,7 +99,8 @@ public class Menu implements InventoryHolder {
      * 为玩家打开菜单
      */
     public Inventory open(Player player) {
-        Component titleComponent = MessageUtil.parse(parsePlaceholders(title, player));
+        String resolvedTitle = resolveConfigured(player, titleKey, title);
+        Component titleComponent = MessageUtil.parse(parsePlaceholders(resolvedTitle, player));
         Inventory inventory = Bukkit.createInventory(this, size, titleComponent);
         this.inventory = inventory;
 
@@ -104,6 +114,13 @@ public class Menu implements InventoryHolder {
 
         player.openInventory(inventory);
         return inventory;
+    }
+
+    private String resolveConfigured(Player player, String key, String fallback) {
+        if (messageManager != null && key != null && !key.isBlank()) {
+            return messageManager.getRaw(player, key);
+        }
+        return fallback;
     }
 
     private String parsePlaceholders(String text, Player player) {

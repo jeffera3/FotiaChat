@@ -1,0 +1,299 @@
+# FotiaChat English Language File
+
+# Message prefix
+prefix: "<!i><gradient:#FF6B6B:#4ECDC4>[FotiaChat]</gradient> "
+
+# General messages
+general:
+  reload-success: "<!i><green>Configuration reloaded successfully!"
+  reload-failed: "<!i><red>Failed to reload configuration: {error}"
+  no-permission: "<!i><red>You don't have permission to execute this command!"
+  player-only: "<!i><red>This command can only be executed by players!"
+  invalid-args: "<!i><red>Invalid arguments! Usage: {usage}"
+  player-not-found: "<!i><red>Player not found: {player}"
+  player-offline: "<!i><red>Player {player} is not online!"
+
+# Chat related messages
+chat:
+  muted: "<!i><red>You are muted and cannot send messages!"
+  mute-expired: "<!i><green>Your mute has expired, you can now send messages!"
+  cooldown: "<!i><red>Sending messages too fast! Please wait {time} before trying again!"
+  empty-message: "<!i><red>Cannot send empty message!"
+  message-too-long: "<!i><red>Message is too long! Maximum length: {max}"
+
+# Admin command messages
+admin:
+  mute-success: "<!i><green>Muted player {player} for {duration}"
+  unmute-success: "<!i><green>Unmuted player {player}!"
+  not-muted: "<!i><yellow>Player {player} is not muted!"
+  clear-chat: "<!i><gray>Chat has been cleared by {player}!"
+  mute-exempt: "<!i><red>Player {player} has mute exemption!"
+  duration-permanent: "Permanent"
+
+# Channel related messages
+channel:
+  current: "<!i><gray>Your current channel: <white>{channel}</white>"
+  switched: "<!i><green>Switched to channel: <white>{channel}</white>"
+  not-found: "<!i><red>Channel not found: {channel}"
+  no-permission: "<!i><red>You don't have permission to use this channel!"
+  list-header: "<!i><gray>Available channels:"
+  list-item: "<!i><gray>- <white>{channel}</white> ({shortcut})"
+
+# Color related messages
+color:
+  current: "<!i><gray>Your current chat color: {color}"
+  help: "<!i><gray>Usage: /chatcolor <colorID|list|reset>"
+  set-success: "<!i><green>Chat color set to: {color}"
+  reset: "<!i><green>Chat color reset to default!"
+  not-found: "<!i><red>Color not found: {color}"
+  no-permission: "<!i><red>You don't have permission to use color: {color}"
+  list-header: "<!i><gray>========== Available Colors =========="
+  list-item: "<!i><gray>- {name} <dark_gray>({id})</dark_gray> {preview}"
+  list-footer: "<!i><gray>======================================"
+  no-colors-available: "<!i><yellow>No colors available!"
+  preview-text: "Sample text"
+  select-hover: "<!i><gray>Click to select this color"
+
+# Filter related messages
+filter:
+  blocked: "<!i><red>Your message contains sensitive words and has been blocked!"
+  warning: "<!i><yellow>Please use appropriate language!"
+
+# Private message related messages
+privatemsg:
+  format-sender: "<!i><gray>[<gold>Me</gold> -> <white>{target}</white>]</gray> {message}"
+  format-receiver: "<!i><gray>[<white>{sender}</white> -> <gold>Me</gold>]</gray> {message}"
+  self: "<!i><red>You cannot send a private message to yourself!"
+  no-reply-target: "<!i><red>No one to reply to!"
+  target-offline: "<!i><red>Target player is offline!"
+  target-ignoring: "<!i><red>This player is ignoring you, message not sent!"
+  socialspy-enabled: "<!i><green>Social spy mode enabled!"
+  socialspy-disabled: "<!i><yellow>Social spy mode disabled!"
+  socialspy-format: "<!i><dark_gray>[Spy] <gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"
+
+# Cross-server communication messages
+crossserver:
+  chat-format: "<!i><dark_gray>[{server}]</dark_gray> <gray>[{channel}]</gray> <white>{player}</white><gray>:</gray> {message}"
+  broadcast-format: "<!i><dark_gray>[{server}]</dark_gray> <gold>{message}</gold>"
+
+# Update check messages
+update:
+  available: "<!i><gold>A new FotiaChat version is available: <white>{latest}</white> <gray>(current: {current})</gray>"
+  release-url: "<!i><gray>Click to view the release page: <aqua>{url}</aqua>"
+  release-hover: "<!i><yellow>Click to open the GitHub Release page"
+  console-available: "A new FotiaChat version is available: {latest} (current: {current}) - {url}"
+  console-latest: "FotiaChat is up to date: {current}"
+  console-failed: "FotiaChat update check failed: {reason}"
+
+# Announcement related messages
+announcement:
+  sent: "<!i><green>Announcement sent: {id}"
+  not-found: "<!i><red>Announcement not found: {id}"
+  broadcast-success: "<!i><green>Message broadcasted!"
+  toggle-enabled: "<!i><green>Auto announcements enabled!"
+  toggle-disabled: "<!i><yellow>Auto announcements disabled!"
+  reloaded: "<!i><green>Announcement configuration reloaded!"
+  list-header: "<!i><gray>========== Announcement List =========="
+  list-item: "<!i><gray>- {id} [{status}] (interval: {interval}s)"
+  usage-send: "<!i><red>Usage: /announcement send <ID>"
+  usage-broadcast: "<!i><red>Usage: /announcement broadcast <message>"
+  help-header: "<!i><gray>========== Announcement Help =========="
+  help-send: "<!i><gray>/announcement send <ID> - Send specific announcement"
+  help-broadcast: "<!i><gray>/announcement broadcast <message> - Broadcast custom message"
+  help-list: "<!i><gray>/announcement list - List all announcements"
+  help-toggle: "<!i><gray>/announcement toggle - Toggle auto announcements"
+  help-reload: "<!i><gray>/announcement reload - Reload announcement config"
+  status-enabled: "Enabled"
+  status-disabled: "Disabled"
+
+# Premium module messages
+premium:
+  not-installed: "<!i><red>This feature requires FotiaChat-Premium module to be installed!"
+  feature-disabled: "<!i><red>{feature} feature is not enabled!"
+
+# Item display messages
+item-display:
+  no-permission: "<!i><red>You don't have permission to display items!"
+  view-no-permission: "<!i><red>You don't have permission to view others' inventory/enderchest!"
+  snapshot-expired: "<!i><red>This snapshot has expired!"
+  inventory-title: "<!i>{player}'s Inventory"
+  enderchest-title: "<!i>{player}'s Enderchest"
+
+# Ignore related messages
+ignore:
+  added: "<!i><green>You are now ignoring chat messages from {player}!"
+  removed: "<!i><yellow>You are no longer ignoring {player}!"
+  self: "<!i><red>You cannot ignore yourself!"
+  list-header: "<!i><gray>========== Ignored Players =========="
+  list-item: "<!i><gray>- <white>{player}</white>"
+  list-empty: "<!i><yellow>You are not ignoring any players!"
+
+mentions:
+  display: "<!i><yellow><bold>@{player}</bold></yellow>"
+  hover-player: "<!i><gray>Player: <white>{player}</white></gray>"
+  hover-sender: "<!i><gray>Mentioned by <white>{sender}</white></gray>"
+
+channels:
+  common:
+    player-display: "<!i><white>{player}</white>"
+    player-hover: "<!i><gray>Player: <white>%player_name%</white></gray>"
+    player-click: "<!i><gray>Click to message this player</gray>"
+  global:
+    name: "Global"
+    display: "<!i><gray>[<white>Global</white>]</gray>"
+    hover-name: "<!i><gray>Channel: <white>{channel}</white></gray>"
+    hover-description: "<!i><gray>Server-wide public chat</gray>"
+  local:
+    name: "Local"
+    display: "<!i><gray>[<yellow>Local</yellow>]</gray>"
+    hover-name: "<!i><yellow>Local Channel</yellow>"
+    hover-description: "<!i><gray>Visible only to nearby players</gray>"
+  admin:
+    name: "Admin"
+    display: "<!i><gray>[<red>Admin</red>]</gray>"
+    hover-name: "<!i><red>Admin Channel</red>"
+    hover-description: "<!i><gray>Administrators only</gray>"
+    player-hover: "<!i><gray>Administrator: <red>%player_name%</red></gray>"
+    player-click: "<!i><gray>Click to view player information</gray>"
+  help:
+    name: "Help"
+    display: "<!i><gray>[<aqua>Help</aqua>]</gray>"
+    hover-name: "<!i><aqua>Help Channel</aqua>"
+    hover-description: "<!i><gray>Ask questions and request help</gray>"
+    player-click: "<!i><aqua>Click to help this player</aqua>"
+
+colors:
+  white: "<!i><white>White</white>"
+  gray: "<!i><gray>Gray</gray>"
+  red: "<!i><red>Red</red>"
+  green: "<!i><green>Green</green>"
+  blue: "<!i><blue>Blue</blue>"
+  yellow: "<!i><yellow>Yellow</yellow>"
+  gold: "<!i><gold>Gold</gold>"
+  aqua: "<!i><aqua>Aqua</aqua>"
+  light-purple: "<!i><light_purple>Pink</light_purple>"
+  sunset: "<!i><gradient:#FF6B6B:#FFE66D>Sunset Gradient</gradient>"
+  ocean: "<!i><gradient:#667eea:#764ba2>Ocean Gradient</gradient>"
+  forest: "<!i><gradient:#11998e:#38ef7d>Forest Gradient</gradient>"
+  fire: "<!i><gradient:#f12711:#f5af19>Fire Gradient</gradient>"
+  ice: "<!i><gradient:#74ebd5:#ACB6E5>Ice Gradient</gradient>"
+  rainbow: "<!i><rainbow>Rainbow</rainbow>"
+
+command:
+  usage:
+    fotiachat: "/fotiachat <reload|help|version>"
+    chatignore: "/chatignore <player|list>"
+    msg: "/msg <player> <message>"
+    reply: "/reply <message>"
+    mute: "/mute <player> <duration> [reason]"
+    unmute: "/unmute <player>"
+  fotiachat:
+    help:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat Help ==========</gradient>"
+      reload: "<!i><gray>/fotiachat reload - Reload configuration"
+      help: "<!i><gray>/fotiachat help - Show help"
+      version: "<!i><gray>/fotiachat version - Show version information"
+      channel: "<!i><gray>/channel [channel] - View or switch channel"
+      chatcolor: "<!i><gray>/chatcolor [color] - Select chat color"
+      msg: "<!i><gray>/msg <player> <message> - Send a private message"
+      reply: "<!i><gray>/reply <message> - Reply to a private message"
+      mute: "<!i><gray>/mute <player> <duration> [reason] - Mute a player"
+      unmute: "<!i><gray>/unmute <player> - Unmute a player"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>====================================</gradient>"
+    version:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ==========</gradient>"
+      version: "<!i><gray>Version: <white>{version}</white>"
+      authors: "<!i><gray>Authors: <white>{authors}</white>"
+      api: "<!i><gray>API version: <white>{api}</white>"
+      crossserver-enabled: "<!i><gray>Cross-server: <green>Enabled</green> <white>({type})</white>"
+      crossserver-disabled: "<!i><gray>Cross-server: <red>Disabled</red>"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>===============================</gradient>"
+
+item-gui:
+  hand-title: "<!i><aqua>{player}'s Item</aqua>"
+  inventory-title: "<!i><gold>{player}'s Inventory</gold>"
+  enderchest-title: "<!i><dark_purple>{player}'s Ender Chest</dark_purple>"
+  helmet: "<!i><gray>Helmet</gray>"
+  chestplate: "<!i><gray>Chestplate</gray>"
+  leggings: "<!i><gray>Leggings</gray>"
+  boots: "<!i><gray>Boots</gray>"
+  offhand: "<!i><gray>Off Hand</gray>"
+  not-equipped: "<!i><dark_gray>Not equipped"
+
+item-display-text:
+  empty-hand: "<!i><gray>[Empty Hand]</gray>"
+  hand-display: "<!i><aqua>[{item_name}]</aqua>"
+  hand-hover-item: "<!i><gray>Item: <white>{item_name}</white></gray>"
+  hand-hover-action: "<!i><yellow>Click to open the item GUI</yellow>"
+  inventory-display: "<!i><gold>[View Inventory]</gold>"
+  inventory-hover-action: "<!i><yellow>Click to view {player}'s inventory</yellow>"
+  enderchest-display: "<!i><dark_purple>[View Ender Chest]</dark_purple>"
+  enderchest-hover-action: "<!i><light_purple>Click to view {player}'s Ender Chest</light_purple>"
+  item-count: "<!i><gray>Item count: {item_count}</gray>"
+
+menus:
+  common:
+    blank: ""
+  color:
+    title: "<!i><gradient:#FF6B6B:#4ECDC4>Select Chat Color</gradient>"
+    select: "<!i><gray>Click to select this color"
+    reset-name: "<!i><red>Reset to Default Color</red>"
+    reset-lore: "<!i><gray>Click to reset your chat color"
+    preview:
+      white: "<!i><white>Preview: This is white text</white>"
+      gray: "<!i><gray>Preview: This is gray text</gray>"
+      red: "<!i><red>Preview: This is red text</red>"
+      green: "<!i><green>Preview: This is green text</green>"
+      blue: "<!i><blue>Preview: This is blue text</blue>"
+      yellow: "<!i><yellow>Preview: This is yellow text</yellow>"
+      gold: "<!i><gold>Preview: This is gold text</gold>"
+      aqua: "<!i><aqua>Preview: This is aqua text</aqua>"
+      light-purple: "<!i><light_purple>Preview: This is pink text</light_purple>"
+      sunset: "<!i><gradient:#FF6B6B:#FFE66D>Preview: Sunset gradient text</gradient>"
+      ocean: "<!i><gradient:#667eea:#764ba2>Preview: Ocean gradient text</gradient>"
+      forest: "<!i><gradient:#11998e:#38ef7d>Preview: Forest gradient text</gradient>"
+      fire: "<!i><gradient:#f12711:#f5af19>Preview: Fire gradient text</gradient>"
+      ice: "<!i><gradient:#74ebd5:#ACB6E5>Preview: Ice gradient text</gradient>"
+      rainbow: "<!i><rainbow>Preview: Rainbow text</rainbow>"
+    permission:
+      red: "<!i><yellow>Required permission: fotiachat.color.red"
+      green: "<!i><yellow>Required permission: fotiachat.color.green"
+      blue: "<!i><yellow>Required permission: fotiachat.color.blue"
+      yellow: "<!i><yellow>Required permission: fotiachat.color.yellow"
+      gold: "<!i><yellow>Required permission: fotiachat.color.gold"
+      aqua: "<!i><yellow>Required permission: fotiachat.color.aqua"
+      light-purple: "<!i><yellow>Required permission: fotiachat.color.light_purple"
+      sunset: "<!i><yellow>Required permission: fotiachat.color.gradient.sunset"
+      ocean: "<!i><yellow>Required permission: fotiachat.color.gradient.ocean"
+      forest: "<!i><yellow>Required permission: fotiachat.color.gradient.forest"
+      fire: "<!i><yellow>Required permission: fotiachat.color.gradient.fire"
+      ice: "<!i><yellow>Required permission: fotiachat.color.gradient.ice"
+      rainbow: "<!i><yellow>Required permission: fotiachat.color.rainbow"
+
+configured-announcements:
+  welcome:
+    border: "<!i><gradient:#FF6B6B:#4ECDC4>========================================</gradient>"
+    title: "<!i><white>       Welcome to the server!</white>"
+    subtitle: "<!i><gray>       Have a great time!</gray>"
+  rules:
+    civil: "<!i><yellow>[Tip]</yellow> <gray>Please follow the server rules and be respectful!</gray>"
+    cheating: "<!i><yellow>[Tip]</yellow> <gray>Cheats and unauthorized modifications are prohibited!</gray>"
+    support: "<!i><yellow>[Tip]</yellow> <gray>Contact an administrator if you need help!</gray>"
+  vip:
+    message: "<!i><gold>[VIP]</gold> <yellow>Thank you for your support! Enjoy your benefits.</yellow>"
+    hover-title: "<!i><gold>VIP Benefits</gold>"
+    hover-action: "<!i><gray>Click to view details</gray>"
+  event:
+    title: "<!i><light_purple>★</light_purple> <gradient:#FF6B6B:#FFE66D>Limited-time event in progress!</gradient> <light_purple>★</light_purple>"
+    action: "<!i><gray>Click to view event details</gray>"
+    hover-title: "<!i><gradient:#FF6B6B:#FFE66D>Limited-time Event</gradient>"
+    hover-time: "<!i><gray>Event time: 2024/1/1 - 2024/1/7</gray>"
+    hover-action: "<!i><yellow>Click to participate!</yellow>"
+  website:
+    message: "<!i><aqua>[Website]</aqua> <white>Visit our official website for more information!</white>"
+    hover-title: "<!i><aqua>Click to visit the website</aqua>"
+    hover-address: "<!i><gray>www.example.com</gray>"
+  help:
+    message: "<!i><green>[Help]</green> <gray>Need help? Click here!</gray>"
+    hover-title: "<!i><green>Get Help</green>"
+    hover-action: "<!i><gray>Click to enter the help command</gray>"

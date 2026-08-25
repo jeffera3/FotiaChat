@@ -5,7 +5,6 @@ import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,11 +25,12 @@ import java.util.*;
 public class AnnouncementManager {
 
     private final FotiaChat plugin;
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private FileConfiguration announcementConfig;
     private final Map<String, Announcement> announcements = new LinkedHashMap<>();
     private final Map<String, BukkitTask> tasks = new HashMap<>();
     private final Map<String, Integer> messageIndex = new HashMap<>();
+    private final Map<String, List<String>> messageKeys = new HashMap<>();
+    private final Map<String, List<String>> hoverTextKeys = new HashMap<>();
 
     private boolean enabled;
     private boolean random;
@@ -45,6 +45,8 @@ public class AnnouncementManager {
         stopAllTasks();
         announcements.clear();
         messageIndex.clear();
+        messageKeys.clear();
+        hoverTextKeys.clear();
 
         saveDefaultConfig();
 
@@ -87,6 +89,10 @@ public class AnnouncementManager {
         String permission = section.getString("permission", "");
         int interval = section.getInt("interval", 300);
         List<String> messages = section.getStringList("messages");
+        List<String> configuredMessageKeys = nonBlankValues(section.getStringList("message-keys"));
+        if (!configuredMessageKeys.isEmpty()) {
+            messageKeys.put(id, configuredMessageKeys);
+        }
         String sound = section.getString("sound", "");
         float soundVolume = (float) section.getDouble("sound-volume", 1.0);
         float soundPitch = (float) section.getDouble("sound-pitch", 1.0);
@@ -107,6 +113,10 @@ public class AnnouncementManager {
         if (hoverSection != null) {
             hoverEnabled = hoverSection.getBoolean("enabled", false);
             hoverText = hoverSection.getStringList("text");
+            List<String> configuredHoverKeys = nonBlankValues(hoverSection.getStringList("text-keys"));
+            if (!configuredHoverKeys.isEmpty()) {
+                hoverTextKeys.put(id, configuredHoverKeys);
+            }
         }
 
         // 加载Click配置
@@ -187,28 +197,26 @@ public class AnnouncementManager {
      * 自动任务按 random/顺序轮播选择单条公告文本。
      */
     private void broadcastNext(Announcement announcement) {
-        if (announcement.getMessages().isEmpty()) {
+        List<String> entries = getMessageEntries(announcement);
+        if (entries.isEmpty()) {
             return;
         }
-        broadcastLines(announcement, List.of(getNextMessage(announcement)));
+        broadcastLines(announcement, List.of(getNextMessage(announcement, entries)), usesMessageKeys(announcement));
     }
 
     /**
      * 手动发送保留“发送该公告全部消息行”的原有语义。
      */
     public void broadcast(Announcement announcement) {
-        if (announcement.getMessages().isEmpty()) {
+        List<String> entries = getMessageEntries(announcement);
+        if (entries.isEmpty()) {
             return;
         }
-        broadcastLines(announcement, announcement.getMessages());
+        broadcastLines(announcement, entries, usesMessageKeys(announcement));
     }
 
-    private void broadcastLines(Announcement announcement, List<String> lines) {
+    private void broadcastLines(Announcement announcement, List<String> lines, boolean linesAreKeys) {
         Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-        boolean playerSpecific = containsPlayerPlaceholder(lines)
-                || containsPlayerPlaceholder(announcement.getHoverText())
-                || containsPlayerPlaceholder(announcement.getClickValue());
-        List<Component> sharedComponents = playerSpecific ? List.of() : buildSharedComponents(announcement, lines);
 
         Sound sound = null;
         if (announcement.hasSound()) {
@@ -223,14 +231,8 @@ public class AnnouncementManager {
             if (announcement.hasPermission() && !player.hasPermission(announcement.getPermission())) {
                 continue;
             }
-            if (playerSpecific) {
-                for (String line : lines) {
-                    player.sendMessage(buildAnnouncementComponent(announcement, line, player));
-                }
-            } else {
-                for (Component component : sharedComponents) {
-                    player.sendMessage(component);
-                }
+            for (String line : lines) {
+                player.sendMessage(buildAnnouncementComponent(announcement, line, linesAreKeys, player));
             }
             if (sound != null) {
                 player.playSound(player.getLocation(), sound,
@@ -239,48 +241,16 @@ public class AnnouncementManager {
         }
     }
 
-    private boolean containsPlayerPlaceholder(Collection<String> values) {
-        for (String value : values) {
-            if (containsPlayerPlaceholder(value)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean containsPlayerPlaceholder(String value) {
-        return value != null && value.contains("%");
-    }
-
-    private List<Component> buildSharedComponents(Announcement announcement, List<String> lines) {
-        List<Component> components = new ArrayList<>(lines.size());
-        for (String line : lines) {
-            Component component = miniMessage.deserialize(line);
-            if (announcement.isHoverEnabled() && !announcement.getHoverText().isEmpty()) {
-                Component hover = Component.empty();
-                for (int index = 0; index < announcement.getHoverText().size(); index++) {
-                    if (index > 0) {
-                        hover = hover.append(Component.newline());
-                    }
-                    hover = hover.append(miniMessage.deserialize(announcement.getHoverText().get(index)));
-                }
-                component = component.hoverEvent(HoverEvent.showText(hover));
-            }
-            if (announcement.isClickEnabled() && !announcement.getClickValue().isEmpty()) {
-                component = component.clickEvent(ClickEvent.clickEvent(
-                        announcement.getClickAction(), announcement.getClickValue()));
-            }
-            components.add(component);
-        }
-        return List.copyOf(components);
-    }
-
     /**
      * 构建带hover和click的公告组件
      */
-    private Component buildAnnouncementComponent(Announcement announcement, String message, Player player) {
+    private Component buildAnnouncementComponent(Announcement announcement, String message,
+                                                 boolean messageIsKey, Player player) {
         // 解析基础消息
-        Component component = MessageUtil.parse(message, player);
+        String resolvedMessage = messageIsKey
+                ? plugin.getMessageManager().getRaw(player, message)
+                : message;
+        Component component = MessageUtil.parse(resolvedMessage, player);
 
         // 如果没有hover和click，直接返回
         if (!announcement.isHoverEnabled() && !announcement.isClickEnabled()) {
@@ -288,20 +258,21 @@ public class AnnouncementManager {
         }
 
         // 添加Hover事件
-        if (announcement.isHoverEnabled() && !announcement.getHoverText().isEmpty()) {
-            List<Component> hoverLines = new ArrayList<>();
-            for (String line : announcement.getHoverText()) {
+        List<String> hoverTextLines = resolveHoverText(announcement, player);
+        if (announcement.isHoverEnabled() && !hoverTextLines.isEmpty()) {
+            List<Component> hoverComponents = new ArrayList<>();
+            for (String line : hoverTextLines) {
                 // 替换占位符
                 String processedLine = plugin.getChatFormatter().getPlaceholderHandler()
                         .setPlaceholders(player, line);
-                hoverLines.add(miniMessage.deserialize(processedLine));
+                hoverComponents.add(MessageUtil.parse(processedLine));
             }
 
             // 合并多行
             Component hoverComponent = Component.empty();
-            for (int i = 0; i < hoverLines.size(); i++) {
-                hoverComponent = hoverComponent.append(hoverLines.get(i));
-                if (i < hoverLines.size() - 1) {
+            for (int i = 0; i < hoverComponents.size(); i++) {
+                hoverComponent = hoverComponent.append(hoverComponents.get(i));
+                if (i < hoverComponents.size() - 1) {
                     hoverComponent = hoverComponent.append(Component.newline());
                 }
             }
@@ -324,8 +295,7 @@ public class AnnouncementManager {
     /**
      * 获取下一条消息
      */
-    private String getNextMessage(Announcement announcement) {
-        List<String> messages = announcement.getMessages();
+    private String getNextMessage(Announcement announcement, List<String> messages) {
         if (messages.size() == 1) {
             return messages.get(0);
         }
@@ -339,6 +309,37 @@ public class AnnouncementManager {
         String message = messages.get(index);
         messageIndex.put(announcement.getId(), (index + 1) % messages.size());
         return message;
+    }
+
+    private boolean usesMessageKeys(Announcement announcement) {
+        return messageKeys.containsKey(announcement.getId());
+    }
+
+    private List<String> getMessageEntries(Announcement announcement) {
+        return messageKeys.getOrDefault(announcement.getId(), announcement.getMessages());
+    }
+
+    private List<String> resolveHoverText(Announcement announcement, Player player) {
+        List<String> keys = hoverTextKeys.get(announcement.getId());
+        if (keys == null) {
+            return announcement.getHoverText();
+        }
+
+        List<String> resolved = new ArrayList<>(keys.size());
+        for (String key : keys) {
+            resolved.add(plugin.getMessageManager().getRaw(player, key));
+        }
+        return resolved;
+    }
+
+    private List<String> nonBlankValues(List<String> values) {
+        List<String> result = new ArrayList<>();
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                result.add(value);
+            }
+        }
+        return List.copyOf(result);
     }
 
     /**

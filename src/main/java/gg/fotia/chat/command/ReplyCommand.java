@@ -43,7 +43,7 @@ public class ReplyCommand implements CommandExecutor, TabCompleter {
 
         if (args.length < 1) {
             plugin.getMessageManager().send(player, "general.invalid-args",
-                    Map.of("usage", "/reply <消息>"));
+                    Map.of("usage", plugin.getMessageManager().getRaw(player, "command.usage.reply")));
             return true;
         }
 

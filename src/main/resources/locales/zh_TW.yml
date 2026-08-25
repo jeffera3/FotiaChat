@@ -1,0 +1,299 @@
+# FotiaChat 英文語言文件
+
+# 訊息前綴
+prefix: "<!i><gradient:#FF6B6B:#4ECDC4>[FotiaChat]</gradient> "
+
+# 一般資訊
+general:
+  reload-success: "<!i><green>配置重新載入成功！"
+  reload-failed: "<!i><red>無法重新載入配置： {error}"
+  no-permission: "<!i><red>您沒有執行此命令的權限！"
+  player-only: "<!i><red>該指令只有玩家才能執行！"
+  invalid-args: "<!i><red>無效參數！使用率： {usage}"
+  player-not-found: "<!i><red>未找到玩家： {player}"
+  player-offline: "<!i><red>玩家 {player} 不在線！"
+
+# 聊天相關訊息
+chat:
+  muted: "<!i><red>您已靜音，無法傳送訊息！"
+  mute-expired: "<!i><green>您的靜音已過期，您現在可以發送訊息了！"
+  cooldown: "<!i><red>發訊息太快了！請等待 {time} 後再重試！"
+  empty-message: "<!i><red>無法發送空訊息！"
+  message-too-long: "<!i><red>留言太長！最大長度： {max}"
+
+# 管理命令訊息
+admin:
+  mute-success: "<!i><green> {player} 的玩家靜音 {duration}"
+  unmute-success: "<!i><green>取消靜音的玩家 {player}！"
+  not-muted: "<!i><yellow>玩家 {player} 未靜音！"
+  clear-chat: "<!i><gray>聊天已被 {player}清除！"
+  mute-exempt: "<!i><red>玩家 {player} 已獲得靜音豁免！"
+  duration-permanent: "永久"
+
+# 頻道相關訊息
+channel:
+  current: "<!i><gray>您目前的頻道：<white>{channel}</white>"
+  switched: "<!i><green>切換到頻道：<white>{channel}</white>"
+  not-found: "<!i><red>找不到頻道： {channel}"
+  no-permission: "<!i><red>您無權使用該頻道！"
+  list-header: "<!i><gray>可用管道："
+  list-item: "<!i><gray>- <white>{channel}</white> ({shortcut})"
+
+# 顏色相關訊息
+color:
+  current: "<!i><gray>您目前的聊天顏色： {color}"
+  help: "<!i><gray>使用率： /chatcolor <colorID|list|reset>"
+  set-success: "<!i><green>聊天顏色設定為： {color}"
+  reset: "<!i><green>聊天顏色重設為預設！"
+  not-found: "<!i><red>未找到顏色： {color}"
+  no-permission: "<!i><red>您無權使用顏色： {color}"
+  list-header: "<!i><gray>========== 可用顏色 =========="
+  list-item: "<!i><gray>- {name} <dark_gray>({id})</dark_gray> {preview}"
+  list-footer: "<!i><gray>======================================"
+  no-colors-available: "<!i><yellow>沒有可用的顏色！"
+  preview-text: "範例文字"
+  select-hover: "<!i><gray>按一下選擇此顏色"
+
+# 過濾相關訊息
+filter:
+  blocked: "<!i><red>您的留言含有敏感詞，已被屏蔽！"
+  warning: "<!i><yellow>請使用適當的語言！"
+
+# 私訊相關訊息
+privatemsg:
+  format-sender: "<!i><gray>[<gold>我</gold> -> <white>{target}</white>]</gray> {message}"
+  format-receiver: "<!i><gray>[<white>{sender}</white> -> <gold>我</gold>]</gray> {message}"
+  self: "<!i><red>您不能給自己發送私人訊息！"
+  no-reply-target: "<!i><red>無人回覆！"
+  target-offline: "<!i><red>目標玩家離線！"
+  target-ignoring: "<!i><red>該玩家無視您，訊息未發送！"
+  socialspy-enabled: "<!i><green>社群間諜模式已啟用！"
+  socialspy-disabled: "<!i><yellow>社群間諜模式已停用！"
+  socialspy-format: "<!i><dark_gray>[間諜]<gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"
+
+# 跨伺服器通訊訊息
+crossserver:
+  chat-format: "<!i><dark_gray>[{server}]</dark_gray> <gray>[{channel}]</gray> <white>{player}</white><gray>:</gray> {message}"
+  broadcast-format: "<!i><dark_gray>[{server}]</dark_gray> <gold>{message}</gold>"
+
+# 更新檢查訊息
+update:
+  available: "<!i><gold>新的 FotiaChat 版本可用：<white>{latest}</white> <gray>（目前： {current}）</gray>"
+  release-url: "<!i><gray>點選查看發布頁面：<aqua>{url}</aqua>"
+  release-hover: "<!i><yellow>點擊開啟 GitHub Release 頁面"
+  console-available: "新的 FotiaChat 版本可用： {latest} （目前： {current}）- {url}"
+  console-latest: "FotiaChat 已更新： {current}"
+  console-failed: "FotiaChat 更新檢查失敗： {reason}"
+
+# 公告相關消息
+announcement:
+  sent: "<!i><green>已發送公告： {id}"
+  not-found: "<!i><red>未找到公告： {id}"
+  broadcast-success: "<!i><green>訊息已播！"
+  toggle-enabled: "<!i><green>自動公告已啟用！"
+  toggle-disabled: "<!i><yellow>自動公告已停用！"
+  reloaded: "<!i><green>公告配置已重新載入！"
+  list-header: "<!i><gray>========== 公告列表 =========="
+  list-item: "<!i><gray>- {id} [{status}]（間隔： {interval}s）"
+  usage-send: "<!i><red>使用率： /announcement send <ID>"
+  usage-broadcast: "<!i><red>使用率： /announcement broadcast <message>"
+  help-header: "<!i><gray>========== 公告幫助 =========="
+  help-send: "<!i><gray>/announcement send <ID> - 發送具體公告"
+  help-broadcast: "<!i><gray>/announcement broadcast <message> - 廣播自訂訊息"
+  help-list: "<!i><gray>/announcement list - 列出所有公告"
+  help-toggle: "<!i><gray>/announcement toggle - 切換自動公告"
+  help-reload: "<!i><gray>/announcement reload - 重新載入公告配置"
+  status-enabled: "啟用"
+  status-disabled: "殘障人士"
+
+# 高級模組訊息
+premium:
+  not-installed: "<!i><red>此功能需要安裝 FotiaChat-Premium 模組！"
+  feature-disabled: "<!i><red>{feature} 功能未啟用！"
+
+# 項目顯示訊息
+item-display:
+  no-permission: "<!i><red>您沒有權限顯示項目！"
+  view-no-permission: "<!i><red>您沒有權限查看其他人的庫存/enderchest！"
+  snapshot-expired: "<!i><red>此快照已過期！"
+  inventory-title: "<!i>{player}的庫存"
+  enderchest-title: "<!i>{player}的末影箱"
+
+# 忽略相關訊息
+ignore:
+  added: "<!i><green>您現在正在忽略來自 {player}的聊天訊息！"
+  removed: "<!i><yellow>你不能再忽視 {player}了！"
+  self: "<!i><red>你不能忽視自己！"
+  list-header: "<!i><gray>========== 忽略玩家 =========="
+  list-item: "<!i><gray>- <white>{player}</white>"
+  list-empty: "<!i><yellow>你沒有忽略任何玩家！"
+
+mentions:
+  display: "<!i><yellow><bold>@{player}</bold></yellow>"
+  hover-player: "<!i><gray>玩家：<white>{player}</white></gray>"
+  hover-sender: "<!i><gray>提及者<white>{sender}</white></gray>"
+
+channels:
+  common:
+    player-display: "<!i><white>{player}</white>"
+    player-hover: "<!i><gray>玩家：<white>%player_name%</white></gray>"
+    player-click: "<!i><gray>點擊向該玩家發送訊息</gray>"
+  global:
+    name: "全球"
+    display: "<!i><gray>[<white>全球</white>]</gray>"
+    hover-name: "<!i><gray>頻道：<white>{channel}</white></gray>"
+    hover-description: "<!i><gray>伺服器範圍內的公共聊天</gray>"
+  local:
+    name: "本地"
+    display: "<!i><gray>[<yellow>本地</yellow>]</gray>"
+    hover-name: "<!i><yellow>本地頻道</yellow>"
+    hover-description: "<!i><gray>僅附近玩家可見</gray>"
+  admin:
+    name: "管理員"
+    display: "<!i><gray>[<red>管理員</red>]</gray>"
+    hover-name: "<!i><red>管理頻道</red>"
+    hover-description: "<!i><gray>限管理員</gray>"
+    player-hover: "<!i><gray>管理員：<red>%player_name%</red></gray>"
+    player-click: "<!i><gray>點擊查看玩家資訊</gray>"
+  help:
+    name: "幫助"
+    display: "<!i><gray>[<aqua>幫助</aqua>]</gray>"
+    hover-name: "<!i><aqua>幫助頻道</aqua>"
+    hover-description: "<!i><gray>提出問題並請求協助</gray>"
+    player-click: "<!i><aqua>點擊幫助該玩家</aqua>"
+
+colors:
+  white: "<!i><white>白色</white>"
+  gray: "<!i><gray>灰色</gray>"
+  red: "<!i><red>紅色</red>"
+  green: "<!i><green>綠色</green>"
+  blue: "<!i><blue>藍色</blue>"
+  yellow: "<!i><yellow>黃色</yellow>"
+  gold: "<!i><gold>黃金</gold>"
+  aqua: "<!i><aqua>阿誇</aqua>"
+  light-purple: "<!i><light_purple>粉紅色</light_purple>"
+  sunset: "<!i><gradient:#FF6B6B:#FFE66D>日落漸變</gradient>"
+  ocean: "<!i><gradient:#667eea:#764ba2>海洋漸變</gradient>"
+  forest: "<!i><gradient:#11998e:#38ef7d>森林漸變</gradient>"
+  fire: "<!i><gradient:#f12711:#f5af19>火梯度</gradient>"
+  ice: "<!i><gradient:#74ebd5:#ACB6E5>冰梯度</gradient>"
+  rainbow: "<!i><rainbow>彩虹</rainbow>"
+
+command:
+  usage:
+    fotiachat: "/fotiachat <reload|help|version>"
+    chatignore: "/chatignore <player|list>"
+    msg: "/msg <player> <message>"
+    reply: "/reply <message>"
+    mute: "/mute <player> <duration> [reason]"
+    unmute: "/unmute <player>"
+  fotiachat:
+    help:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat 幫助 ==========</gradient>"
+      reload: "<!i><gray>/fotiachat reload - 重新載入配置"
+      help: "<!i><gray>/fotiachat help - 顯示幫助"
+      version: "<!i><gray>/fotiachat version - 顯示版本信息"
+      channel: "<!i><gray>/channel [channel] - 查看或切換頻道"
+      chatcolor: "<!i><gray>/chatcolor [color] - 選擇聊天顏色"
+      msg: "<!i><gray>/msg <player> <message> - 發送私人訊息"
+      reply: "<!i><gray>/reply <message> - 回覆私人訊息"
+      mute: "<!i><gray>/mute <player> <duration> [reason] - 將玩家靜音"
+      unmute: "<!i><gray>/unmute <player> - 取消玩家靜音"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>====================================</gradient>"
+    version:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ==========</gradient>"
+      version: "<!i><gray>版本：<white>{version}</white>"
+      authors: "<!i><gray>作者：<white>{authors}</white>"
+      api: "<!i><gray>API版本：<white>{api}</white>"
+      crossserver-enabled: "<!i><gray>跨伺服器：<green>啟用</green> <white>({type})</white>"
+      crossserver-disabled: "<!i><gray>跨伺服器：<red>殘障人士</red>"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>===============================</gradient>"
+
+item-gui:
+  hand-title: "<!i><aqua>{player}的物品</aqua>"
+  inventory-title: "<!i><gold>{player}的庫存</gold>"
+  enderchest-title: "<!i><dark_purple>{player}的末影箱</dark_purple>"
+  helmet: "<!i><gray>頭盔</gray>"
+  chestplate: "<!i><gray>胸甲</gray>"
+  leggings: "<!i><gray>打底褲</gray>"
+  boots: "<!i><gray>靴子</gray>"
+  offhand: "<!i><gray>副手</gray>"
+  not-equipped: "<!i><dark_gray>未配備"
+
+item-display-text:
+  empty-hand: "<!i><gray>[空手]</gray>"
+  hand-display: "<!i><aqua>[{item_name}]</aqua>"
+  hand-hover-item: "<!i><gray>項目：<white>{item_name}</white></gray>"
+  hand-hover-action: "<!i><yellow>點擊以開啟項目 GUI</yellow>"
+  inventory-display: "<!i><gold>[查看庫存]</gold>"
+  inventory-hover-action: "<!i><yellow>點擊查看 {player}的庫存</yellow>"
+  enderchest-display: "<!i><dark_purple>[查看末影箱]</dark_purple>"
+  enderchest-hover-action: "<!i><light_purple>點擊查看 {player}的末影寶箱</light_purple>"
+  item-count: "<!i><gray>項目數： {item_count}</gray>"
+
+menus:
+  common:
+    blank: ""
+  color:
+    title: "<!i><gradient:#FF6B6B:#4ECDC4>選擇聊天顏色</gradient>"
+    select: "<!i><gray>按一下選擇此顏色"
+    reset-name: "<!i><red>重設為預設顏色</red>"
+    reset-lore: "<!i><gray>點擊以重設聊天顏色"
+    preview:
+      white: "<!i><white>預覽：這是白色文本</white>"
+      gray: "<!i><gray>預覽：這是灰色文字</gray>"
+      red: "<!i><red>預覽：這是紅色文字</red>"
+      green: "<!i><green>預覽：這是綠色文本</green>"
+      blue: "<!i><blue>預覽：這是藍色文本</blue>"
+      yellow: "<!i><yellow>預覽：這是黃色文本</yellow>"
+      gold: "<!i><gold>預覽：這是金色的文字</gold>"
+      aqua: "<!i><aqua>預覽：這是水色文本</aqua>"
+      light-purple: "<!i><light_purple>預覽：這是粉紅色的文字</light_purple>"
+      sunset: "<!i><gradient:#FF6B6B:#FFE66D>預覽：日落漸層文本</gradient>"
+      ocean: "<!i><gradient:#667eea:#764ba2>預覽：海洋漸層文本</gradient>"
+      forest: "<!i><gradient:#11998e:#38ef7d>預覽：森林漸層文本</gradient>"
+      fire: "<!i><gradient:#f12711:#f5af19>預覽：火焰漸層文本</gradient>"
+      ice: "<!i><gradient:#74ebd5:#ACB6E5>預覽：冰漸層文本</gradient>"
+      rainbow: "<!i><rainbow>預覽：彩虹文字</rainbow>"
+    permission:
+      red: "<!i><yellow>所需權限： fotiachat.color.red"
+      green: "<!i><yellow>所需權限： fotiachat.color.green"
+      blue: "<!i><yellow>所需權限： fotiachat.color.blue"
+      yellow: "<!i><yellow>所需權限： fotiachat.color.yellow"
+      gold: "<!i><yellow>所需權限： fotiachat.color.gold"
+      aqua: "<!i><yellow>所需權限： fotiachat.color.aqua"
+      light-purple: "<!i><yellow>所需權限： fotiachat.color.light_purple"
+      sunset: "<!i><yellow>所需權限： fotiachat.color.gradient.sunset"
+      ocean: "<!i><yellow>所需權限： fotiachat.color.gradient.ocean"
+      forest: "<!i><yellow>所需權限： fotiachat.color.gradient.forest"
+      fire: "<!i><yellow>所需權限： fotiachat.color.gradient.fire"
+      ice: "<!i><yellow>所需權限： fotiachat.color.gradient.ice"
+      rainbow: "<!i><yellow>所需權限： fotiachat.color.rainbow"
+
+configured-announcements:
+  welcome:
+    border: "<!i><gradient:#FF6B6B:#4ECDC4>========================================</gradient>"
+    title: "<!i><white>       歡迎來到伺服器！</white>"
+    subtitle: "<!i><gray>       玩得開心！</gray>"
+  rules:
+    civil: "<!i><yellow>[提示]</yellow> <gray>請遵守伺服器規則並互相尊重！</gray>"
+    cheating: "<!i><yellow>[提示]</yellow> <gray>禁止作弊和未經授權的修改！</gray>"
+    support: "<!i><yellow>[提示]</yellow> <gray>如需協助請聯絡管理員！</gray>"
+  vip:
+    message: "<!i><gold>[貴賓]</gold> <yellow>感謝您的支持！享受你的好處。</yellow>"
+    hover-title: "<!i><gold>貴賓福利</gold>"
+    hover-action: "<!i><gray>點擊看詳情</gray>"
+  event:
+    title: "<!i><light_purple>★</light_purple> <gradient:#FF6B6B:#FFE66D>限時活動進行中！</gradient> <light_purple>★</light_purple>"
+    action: "<!i><gray>點擊查看活動詳情</gray>"
+    hover-title: "<!i><gradient:#FF6B6B:#FFE66D>限時活動</gradient>"
+    hover-time: "<!i><gray>事件時間： 2024/1/1 - 2024/1/7</gray>"
+    hover-action: "<!i><yellow>點擊參與！</yellow>"
+  website:
+    message: "<!i><aqua>[網站]</aqua> <white>請造訪我們的官方網站以了解更多資訊！</white>"
+    hover-title: "<!i><aqua>點擊訪問網站</aqua>"
+    hover-address: "<!i><gray>www.example.com</gray>"
+  help:
+    message: "<!i><green>[幫助]</green> <gray>需要幫助嗎？點這裡！</gray>"
+    hover-title: "<!i><green>獲取協助</green>"
+    hover-action: "<!i><gray>點擊進入幫助命令</gray>"

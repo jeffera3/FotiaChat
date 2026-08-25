@@ -1,0 +1,299 @@
+# FotiaChat Englische Sprachdatei
+
+# Nachrichtenpräfix
+prefix: "<!i><gradient:#FF6B6B:#4ECDC4>[FotiaChat]</gradient> "
+
+# Allgemeine Nachrichten
+general:
+  reload-success: "<!i><green>Konfiguration erfolgreich neu geladen!"
+  reload-failed: "<!i><red>Konfiguration konnte nicht neu geladen werden: {error}"
+  no-permission: "<!i><red>Sie haben keine Berechtigung, diesen Befehl auszuführen!"
+  player-only: "<!i><red>Dieser Befehl kann nur von Spielern ausgeführt werden!"
+  invalid-args: "<!i><red>Ungültige Argumente! Nutzung: {usage}"
+  player-not-found: "<!i><red>Spieler nicht gefunden: {player}"
+  player-offline: "<!i><red>Spieler {player} ist nicht online!"
+
+# Chatbezogene Nachrichten
+chat:
+  muted: "<!i><red>Sie sind stummgeschaltet und können keine Nachrichten senden!"
+  mute-expired: "<!i><green>Ihre Stummschaltung ist abgelaufen, Sie können jetzt Nachrichten senden!"
+  cooldown: "<!i><red>Senden Sie Nachrichten zu schnell! Bitte warten Sie {time} , bevor Sie es erneut versuchen!"
+  empty-message: "<!i><red>Leere Nachricht kann nicht gesendet werden!"
+  message-too-long: "<!i><red>Nachricht ist zu lang! Maximale Länge: {max}"
+
+# Admin-Befehlsmeldungen
+admin:
+  mute-success: "<!i><green>Spieler {player} für {duration}stummgeschaltet"
+  unmute-success: "<!i><green>Nicht stummgeschalteter Spieler {player}!"
+  not-muted: "<!i><yellow>Spieler {player} ist nicht stummgeschaltet!"
+  clear-chat: "<!i><gray>Der Chat wurde von {player}gelöscht!"
+  mute-exempt: "<!i><red>Spieler {player} hat Stummschaltungsbefreiung!"
+  duration-permanent: "Dauerhaft"
+
+# Kanalbezogene Nachrichten
+channel:
+  current: "<!i><gray>Dein aktueller Kanal:<white>{channel}</white>"
+  switched: "<!i><green>Zum Kanal gewechselt:<white>{channel}</white>"
+  not-found: "<!i><red>Kanal nicht gefunden: {channel}"
+  no-permission: "<!i><red>Du hast keine Berechtigung, diesen Kanal zu nutzen!"
+  list-header: "<!i><gray>Verfügbare Kanäle:"
+  list-item: "<!i><gray>- <white>{channel}</white> ({shortcut})"
+
+# Farbbezogene Nachrichten
+color:
+  current: "<!i><gray>Ihre aktuelle Chat-Farbe: {color}"
+  help: "<!i><gray>Nutzung: /chatcolor <colorID|list|reset>"
+  set-success: "<!i><green>Chat-Farbe eingestellt auf: {color}"
+  reset: "<!i><green>Chatfarbe auf Standard zurückgesetzt!"
+  not-found: "<!i><red>Farbe nicht gefunden: {color}"
+  no-permission: "<!i><red>Sie haben keine Berechtigung zur Verwendung der Farbe: {color}"
+  list-header: "<!i><gray>========== Verfügbare Farben =========="
+  list-item: "<!i><gray>- {name} <dark_gray>({id})</dark_gray> {preview}"
+  list-footer: "<!i><gray>======================================"
+  no-colors-available: "<!i><yellow>Keine Farben verfügbar!"
+  preview-text: "Beispieltext"
+  select-hover: "<!i><gray>Klicken Sie, um diese Farbe auszuwählen"
+
+# Filtern Sie verwandte Nachrichten
+filter:
+  blocked: "<!i><red>Ihre Nachricht enthält sensible Wörter und wurde blockiert!"
+  warning: "<!i><yellow>Bitte verwenden Sie eine angemessene Sprache!"
+
+# Private Nachrichten im Zusammenhang mit Nachrichten
+privatemsg:
+  format-sender: "<!i><gray>[<gold>Ich</gold> -> <white>{target}</white>]</gray> {message}"
+  format-receiver: "<!i><gray>[<white>{sender}</white> -> <gold>Ich</gold>]</gray> {message}"
+  self: "<!i><red>Sie können keine private Nachricht an sich selbst senden!"
+  no-reply-target: "<!i><red>Niemand, dem man antworten kann!"
+  target-offline: "<!i><red>Zielspieler ist offline!"
+  target-ignoring: "<!i><red>Dieser Spieler ignoriert dich, Nachricht nicht gesendet!"
+  socialspy-enabled: "<!i><green>Sozialer Spionagemodus aktiviert!"
+  socialspy-disabled: "<!i><yellow>Sozialer Spionagemodus deaktiviert!"
+  socialspy-format: "<!i><dark_gray>[Spion]<gray>{sender}</gray> -> <gray>{target}</gray>:</dark_gray> {message}"
+
+# Serverübergreifende Kommunikationsnachrichten
+crossserver:
+  chat-format: "<!i><dark_gray>[{server}]</dark_gray> <gray>[{channel}]</gray> <white>{player}</white><gray>:</gray> {message}"
+  broadcast-format: "<!i><dark_gray>[{server}]</dark_gray> <gold>{message}</gold>"
+
+# Prüfnachrichten aktualisieren
+update:
+  available: "<!i><gold>Eine neue FotiaChat -Version ist verfügbar:<white>{latest}</white> <gray>(aktuell: {current})</gray>"
+  release-url: "<!i><gray>Klicken Sie hier, um die Veröffentlichungsseite anzuzeigen:<aqua>{url}</aqua>"
+  release-hover: "<!i><yellow>Klicken Sie hier, um die Seite GitHub Release zu öffnen"
+  console-available: "Eine neue FotiaChat -Version ist verfügbar: {latest} (aktuell: {current}) - {url}"
+  console-latest: "FotiaChat ist aktuell: {current}"
+  console-failed: "FotiaChat Update-Prüfung fehlgeschlagen: {reason}"
+
+# Ankündigungsbezogene Nachrichten
+announcement:
+  sent: "<!i><green>Ankündigung gesendet: {id}"
+  not-found: "<!i><red>Ankündigung nicht gefunden: {id}"
+  broadcast-success: "<!i><green>Nachricht gesendet!"
+  toggle-enabled: "<!i><green>Automatische Ankündigungen aktiviert!"
+  toggle-disabled: "<!i><yellow>Automatische Ankündigungen deaktiviert!"
+  reloaded: "<!i><green>Ankündigungskonfiguration neu geladen!"
+  list-header: "<!i><gray>========== Ankündigungsliste =========="
+  list-item: "<!i><gray>- {id} [{status}] (Intervall: {interval}s)"
+  usage-send: "<!i><red>Nutzung: /announcement send <ID>"
+  usage-broadcast: "<!i><red>Nutzung: /announcement broadcast <message>"
+  help-header: "<!i><gray>========== Ankündigungshilfe =========="
+  help-send: "<!i><gray>/announcement send <ID> – Spezifische Ankündigung senden"
+  help-broadcast: "<!i><gray>/announcement broadcast <message> – Benutzerdefinierte Nachricht senden"
+  help-list: "<!i><gray>/announcement list – Alle Ankündigungen auflisten"
+  help-toggle: "<!i><gray>/announcement toggle – Automatische Ankündigungen ein-/ausschalten"
+  help-reload: "<!i><gray>/announcement reload – Ankündigungskonfiguration neu laden"
+  status-enabled: "Aktiviert"
+  status-disabled: "Deaktiviert"
+
+# Nachrichten des Premium-Moduls
+premium:
+  not-installed: "<!i><red>Für diese Funktion muss das Modul FotiaChat-Premium installiert sein!"
+  feature-disabled: "<!i><red>{feature} -Funktion ist nicht aktiviert!"
+
+# Meldungen zur Elementanzeige
+item-display:
+  no-permission: "<!i><red>Sie haben keine Berechtigung zum Anzeigen von Artikeln!"
+  view-no-permission: "<!i><red>Sie haben keine Berechtigung, das Inventar anderer/enderchestanzuzeigen!"
+  snapshot-expired: "<!i><red>Dieser Schnappschuss ist abgelaufen!"
+  inventory-title: "<!i>{player}'s Inventar"
+  enderchest-title: "<!i>{player}'s Enderchest"
+
+# Verwandte Nachrichten ignorieren
+ignore:
+  added: "<!i><green>Sie ignorieren jetzt Chatnachrichten von {player}!"
+  removed: "<!i><yellow>Sie ignorieren {player}nicht länger!"
+  self: "<!i><red>Du kannst dich selbst nicht ignorieren!"
+  list-header: "<!i><gray>========== Ignorierte Spieler =========="
+  list-item: "<!i><gray>- <white>{player}</white>"
+  list-empty: "<!i><yellow>Du ignorierst keinen Spieler!"
+
+mentions:
+  display: "<!i><yellow><bold>@{player}</bold></yellow>"
+  hover-player: "<!i><gray>Spieler:<white>{player}</white></gray>"
+  hover-sender: "<!i><gray>Erwähnt von<white>{sender}</white></gray>"
+
+channels:
+  common:
+    player-display: "<!i><white>{player}</white>"
+    player-hover: "<!i><gray>Spieler:<white>%player_name%</white></gray>"
+    player-click: "<!i><gray>Klicken Sie, um diesem Spieler eine Nachricht zu senden</gray>"
+  global:
+    name: "Global"
+    display: "<!i><gray>[<white>Global</white>]</gray>"
+    hover-name: "<!i><gray>Kanal:<white>{channel}</white></gray>"
+    hover-description: "<!i><gray>Serverweiter öffentlicher Chat</gray>"
+  local:
+    name: "Lokal"
+    display: "<!i><gray>[<yellow>Lokal</yellow>]</gray>"
+    hover-name: "<!i><yellow>Lokaler Kanal</yellow>"
+    hover-description: "<!i><gray>Nur für Spieler in der Nähe sichtbar</gray>"
+  admin:
+    name: "Admin"
+    display: "<!i><gray>[<red>Admin</red>]</gray>"
+    hover-name: "<!i><red>Admin-Kanal</red>"
+    hover-description: "<!i><gray>Nur Administratoren</gray>"
+    player-hover: "<!i><gray>Administrator:<red>%player_name%</red></gray>"
+    player-click: "<!i><gray>Klicken Sie hier, um Spielerinformationen anzuzeigen</gray>"
+  help:
+    name: "Hilfe"
+    display: "<!i><gray>[<aqua>Hilfe</aqua>]</gray>"
+    hover-name: "<!i><aqua>Hilfekanal</aqua>"
+    hover-description: "<!i><gray>Stellen Sie Fragen und bitten Sie um Hilfe</gray>"
+    player-click: "<!i><aqua>Klicken Sie hier, um diesem Spieler zu helfen</aqua>"
+
+colors:
+  white: "<!i><white>Weiß</white>"
+  gray: "<!i><gray>Grau</gray>"
+  red: "<!i><red>Rot</red>"
+  green: "<!i><green>Grün</green>"
+  blue: "<!i><blue>Blau</blue>"
+  yellow: "<!i><yellow>Gelb</yellow>"
+  gold: "<!i><gold>Gold</gold>"
+  aqua: "<!i><aqua>Aqua</aqua>"
+  light-purple: "<!i><light_purple>Rosa</light_purple>"
+  sunset: "<!i><gradient:#FF6B6B:#FFE66D>Sonnenuntergangsverlauf</gradient>"
+  ocean: "<!i><gradient:#667eea:#764ba2>Ozeangradient</gradient>"
+  forest: "<!i><gradient:#11998e:#38ef7d>Waldgradient</gradient>"
+  fire: "<!i><gradient:#f12711:#f5af19>Feuergradient</gradient>"
+  ice: "<!i><gradient:#74ebd5:#ACB6E5>Eisgradient</gradient>"
+  rainbow: "<!i><rainbow>Regenbogen</rainbow>"
+
+command:
+  usage:
+    fotiachat: "/fotiachat <reload|help|version>"
+    chatignore: "/chatignore <player|list>"
+    msg: "/msg <player> <message>"
+    reply: "/reply <message>"
+    mute: "/mute <player> <duration> [reason]"
+    unmute: "/unmute <player>"
+  fotiachat:
+    help:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat Hilfe ==========</gradient>"
+      reload: "<!i><gray>/fotiachat reload – Konfiguration neu laden"
+      help: "<!i><gray>/fotiachat help - Hilfe anzeigen"
+      version: "<!i><gray>/fotiachat version – Versionsinformationen anzeigen"
+      channel: "<!i><gray>/channel [channel] – Kanal anzeigen oder wechseln"
+      chatcolor: "<!i><gray>/chatcolor [color] – Chatfarbe auswählen"
+      msg: "<!i><gray>/msg <player> <message> – Senden Sie eine private Nachricht"
+      reply: "<!i><gray>/reply <message> – Auf eine private Nachricht antworten"
+      mute: "<!i><gray>/mute <player> <duration> [reason] – Einen Spieler stumm schalten"
+      unmute: "<!i><gray>/unmute <player> – Stummschaltung eines Spielers aufheben"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>====================================</gradient>"
+    version:
+      header: "<!i><gradient:#FF6B6B:#4ECDC4>========== FotiaChat ==========</gradient>"
+      version: "<!i><gray>Version:<white>{version}</white>"
+      authors: "<!i><gray>Autoren:<white>{authors}</white>"
+      api: "<!i><gray>API-Version:<white>{api}</white>"
+      crossserver-enabled: "<!i><gray>Serverübergreifend:<green>Aktiviert</green> <white>({type})</white>"
+      crossserver-disabled: "<!i><gray>Serverübergreifend:<red>Deaktiviert</red>"
+      footer: "<!i><gradient:#FF6B6B:#4ECDC4>===============================</gradient>"
+
+item-gui:
+  hand-title: "<!i><aqua>{player}'s Artikel</aqua>"
+  inventory-title: "<!i><gold>{player}'s Inventar</gold>"
+  enderchest-title: "<!i><dark_purple>{player}'s Ender-Truhe</dark_purple>"
+  helmet: "<!i><gray>Helm</gray>"
+  chestplate: "<!i><gray>Brustpanzer</gray>"
+  leggings: "<!i><gray>Leggings</gray>"
+  boots: "<!i><gray>Stiefel</gray>"
+  offhand: "<!i><gray>Aus der Hand</gray>"
+  not-equipped: "<!i><dark_gray>Nicht ausgestattet"
+
+item-display-text:
+  empty-hand: "<!i><gray>[Leere Hand]</gray>"
+  hand-display: "<!i><aqua>[{item_name}]</aqua>"
+  hand-hover-item: "<!i><gray>Artikel:<white>{item_name}</white></gray>"
+  hand-hover-action: "<!i><yellow>Klicken Sie hier, um die Element-GUI zu öffnen</yellow>"
+  inventory-display: "<!i><gold>[Inventar anzeigen]</gold>"
+  inventory-hover-action: "<!i><yellow>Klicken Sie hier, um den Bestand von {player}anzuzeigen</yellow>"
+  enderchest-display: "<!i><dark_purple>[Ender-Truhe anzeigen]</dark_purple>"
+  enderchest-hover-action: "<!i><light_purple>Klicken Sie hier, um die Ender-Truhe von {player}anzuzeigen</light_purple>"
+  item-count: "<!i><gray>Artikelanzahl: {item_count}</gray>"
+
+menus:
+  common:
+    blank: ""
+  color:
+    title: "<!i><gradient:#FF6B6B:#4ECDC4>Wählen Sie Chat-Farbe</gradient>"
+    select: "<!i><gray>Klicken Sie, um diese Farbe auszuwählen"
+    reset-name: "<!i><red>Auf Standardfarbe zurücksetzen</red>"
+    reset-lore: "<!i><gray>Klicken Sie hier, um Ihre Chat-Farbe zurückzusetzen"
+    preview:
+      white: "<!i><white>Vorschau: Dies ist weißer Text</white>"
+      gray: "<!i><gray>Vorschau: Dies ist grauer Text</gray>"
+      red: "<!i><red>Vorschau: Dies ist roter Text</red>"
+      green: "<!i><green>Vorschau: Dies ist grüner Text</green>"
+      blue: "<!i><blue>Vorschau: Dies ist blauer Text</blue>"
+      yellow: "<!i><yellow>Vorschau: Dies ist gelber Text</yellow>"
+      gold: "<!i><gold>Vorschau: Dies ist goldener Text</gold>"
+      aqua: "<!i><aqua>Vorschau: Dies ist Aquatext</aqua>"
+      light-purple: "<!i><light_purple>Vorschau: Dies ist rosa Text</light_purple>"
+      sunset: "<!i><gradient:#FF6B6B:#FFE66D>Vorschau: Text mit Sonnenuntergangsverlauf</gradient>"
+      ocean: "<!i><gradient:#667eea:#764ba2>Vorschau: Ozeanverlaufstext</gradient>"
+      forest: "<!i><gradient:#11998e:#38ef7d>Vorschau: Text mit Waldverlauf</gradient>"
+      fire: "<!i><gradient:#f12711:#f5af19>Vorschau: Feuerverlaufstext</gradient>"
+      ice: "<!i><gradient:#74ebd5:#ACB6E5>Vorschau: Text mit Eisverlauf</gradient>"
+      rainbow: "<!i><rainbow>Vorschau: Regenbogentext</rainbow>"
+    permission:
+      red: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.red"
+      green: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.green"
+      blue: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.blue"
+      yellow: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.yellow"
+      gold: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gold"
+      aqua: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.aqua"
+      light-purple: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.light_purple"
+      sunset: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gradient.sunset"
+      ocean: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gradient.ocean"
+      forest: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gradient.forest"
+      fire: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gradient.fire"
+      ice: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.gradient.ice"
+      rainbow: "<!i><yellow>Erforderliche Berechtigung: fotiachat.color.rainbow"
+
+configured-announcements:
+  welcome:
+    border: "<!i><gradient:#FF6B6B:#4ECDC4>========================================</gradient>"
+    title: "<!i><white>       Willkommen auf dem Server!</white>"
+    subtitle: "<!i><gray>       Viel Spaß!</gray>"
+  rules:
+    civil: "<!i><yellow>[Tipp]</yellow> <gray>Bitte befolgen Sie die Serverregeln und seien Sie respektvoll!</gray>"
+    cheating: "<!i><yellow>[Tipp]</yellow> <gray>Cheats und unerlaubte Modifikationen sind verboten!</gray>"
+    support: "<!i><yellow>[Tipp]</yellow> <gray>Wenden Sie sich an einen Administrator, wenn Sie Hilfe benötigen!</gray>"
+  vip:
+    message: "<!i><gold>[VIP]</gold> <yellow>Vielen Dank für Ihre Unterstützung! Genießen Sie Ihre Vorteile.</yellow>"
+    hover-title: "<!i><gold>VIP-Vorteile</gold>"
+    hover-action: "<!i><gray>Klicken Sie hier, um Details anzuzeigen</gray>"
+  event:
+    title: "<!i><light_purple>★</light_purple> <gradient:#FF6B6B:#FFE66D>Zeitlich begrenztes Event läuft!</gradient> <light_purple>★</light_purple>"
+    action: "<!i><gray>Klicken Sie hier, um die Veranstaltungsdetails anzuzeigen</gray>"
+    hover-title: "<!i><gradient:#FF6B6B:#FFE66D>Zeitlich begrenztes Event</gradient>"
+    hover-time: "<!i><gray>Ereigniszeit: 2024/1/1 - 2024/1/7</gray>"
+    hover-action: "<!i><yellow>Klicken Sie hier, um teilzunehmen!</yellow>"
+  website:
+    message: "<!i><aqua>[Website]</aqua> <white>Besuchen Sie unsere offizielle Website für weitere Informationen!</white>"
+    hover-title: "<!i><aqua>Klicken Sie hier, um die Website zu besuchen</aqua>"
+    hover-address: "<!i><gray>www.example.com</gray>"
+  help:
+    message: "<!i><green>[Hilfe]</green> <gray>Brauchen Sie Hilfe? Klicken Sie hier!</gray>"
+    hover-title: "<!i><green>Holen Sie sich Hilfe</green>"
+    hover-action: "<!i><gray>Klicken Sie, um den Hilfebefehl einzugeben</gray>"

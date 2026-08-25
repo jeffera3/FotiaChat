@@ -7,6 +7,9 @@ import gg.fotia.chat.api.FotiaChatAPI;
 import gg.fotia.chat.api.PublicChatInterceptor;
 import gg.fotia.chat.api.PublicChatInterceptorRegistry;
 import gg.fotia.chat.api.PublicChatObserver;
+import gg.fotia.chat.api.ChatPipeline;
+import gg.fotia.chat.api.ChatRouteInterceptor;
+import gg.fotia.chat.api.ChatRouteInterceptorRegistry;
 import gg.fotia.chat.api.VirtualChatDispatcher;
 import gg.fotia.chat.channel.ChannelManager;
 import gg.fotia.chat.color.ColorManager;
@@ -23,6 +26,7 @@ import gg.fotia.chat.manager.ConfigManager;
 import gg.fotia.chat.manager.MessageManager;
 import gg.fotia.chat.menu.MenuManager;
 import gg.fotia.chat.mute.MuteManager;
+import gg.fotia.chat.pipeline.DefaultChatPipeline;
 import gg.fotia.chat.privatemsg.PrivateMessageManager;
 import gg.fotia.chat.storage.DatabaseManager;
 import gg.fotia.chat.update.UpdateChecker;
@@ -58,6 +62,10 @@ public class FotiaChat extends JavaPlugin {
     private final PublicChatInterceptorRegistry publicChatInterceptors =
             new PublicChatInterceptorRegistry(exception ->
                     getLogger().warning("公共聊天拦截器处理失败: " + exception.getMessage()));
+    private final ChatRouteInterceptorRegistry chatRouteInterceptors =
+            new ChatRouteInterceptorRegistry(exception ->
+                    getLogger().warning("组件聊天路由处理失败: " + exception.getMessage()));
+    private ChatPipeline chatPipeline;
 
     @Override
     public void onEnable() {
@@ -93,6 +101,7 @@ public class FotiaChat extends JavaPlugin {
         // 初始化禁言管理器
         this.muteManager = new MuteManager(this);
         this.muteManager.load();
+        this.chatPipeline = new DefaultChatPipeline(this);
 
         // 初始化屏蔽管理器
         this.ignoreManager = new IgnoreManager(this);
@@ -201,6 +210,7 @@ public class FotiaChat extends JavaPlugin {
         });
         runCleanup("清理公共聊天扩展", () -> {
             publicChatInterceptors.clear();
+            chatRouteInterceptors.clear();
             publicChatObservers.clear();
             chatPlaceholderProviders.clear();
         });
@@ -336,6 +346,18 @@ public class FotiaChat extends JavaPlugin {
         publicChatInterceptors.unregister(interceptor);
     }
 
+    public void registerChatRouteInterceptor(ChatRouteInterceptor interceptor) {
+        chatRouteInterceptors.register(interceptor);
+    }
+
+    public void unregisterChatRouteInterceptor(ChatRouteInterceptor interceptor) {
+        chatRouteInterceptors.unregister(interceptor);
+    }
+
+    public ChatPipeline getChatPipeline() {
+        return chatPipeline;
+    }
+
     public void registerChatPlaceholderProvider(ChatPlaceholderProvider provider) {
         if (provider != null) {
             chatPlaceholderProviders.add(provider);
@@ -368,6 +390,13 @@ public class FotiaChat extends JavaPlugin {
                                        gg.fotia.chat.channel.Channel channel,
                                        String plainMessage) {
         return publicChatInterceptors.intercept(sender, channel, plainMessage);
+    }
+
+    public boolean interceptRoutedChat(org.bukkit.entity.Player sender,
+                                       gg.fotia.chat.channel.Channel channel,
+                                       String plainMessage,
+                                       net.kyori.adventure.text.Component component) {
+        return chatRouteInterceptors.intercept(sender, channel, plainMessage, component);
     }
 
     public void notifyPublicChatObservers(org.bukkit.entity.Player sender,

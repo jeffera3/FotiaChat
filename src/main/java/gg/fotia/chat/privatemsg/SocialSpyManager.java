@@ -1,7 +1,6 @@
 package gg.fotia.chat.privatemsg;
 
 import gg.fotia.chat.FotiaChat;
-import gg.fotia.chat.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -60,32 +59,30 @@ public class SocialSpyManager {
      * 通知所有监听者
      */
     public void notifySpy(Player sender, Player target, String message) {
-        String spyFormat = plugin.getMessageManager().getRaw("privatemsg.socialspy-format");
-        spyFormat = spyFormat.replace("{sender}", sender.getName());
-        spyFormat = spyFormat.replace("{target}", target.getName());
-        spyFormat = spyFormat.replace("{message}", message);
-
         for (UUID uuid : spyingPlayers) {
             Player spy = Bukkit.getPlayer(uuid);
             if (spy != null && spy.isOnline()) {
                 // 不通知发送者和接收者
                 if (!spy.equals(sender) && !spy.equals(target)) {
-                    spy.sendMessage(MessageUtil.parse(spyFormat, spy));
+                    spy.sendMessage(plugin.getMessageManager().get("privatemsg.socialspy-format", spy, java.util.Map.of(
+                            "sender", sender.getName(),
+                            "target", target.getName(),
+                            "message", message
+                    )));
                 }
             }
         }
     }
 
     public void notifyVirtualSpy(String senderName, String targetName, String message) {
-        String spyFormat = plugin.getMessageManager().getRaw("privatemsg.socialspy-format");
-        spyFormat = spyFormat.replace("{sender}", senderName);
-        spyFormat = spyFormat.replace("{target}", targetName);
-        spyFormat = spyFormat.replace("{message}", message);
-
         for (UUID uuid : spyingPlayers) {
             Player spy = Bukkit.getPlayer(uuid);
             if (spy != null && spy.isOnline()) {
-                spy.sendMessage(MessageUtil.parse(spyFormat, spy));
+                spy.sendMessage(plugin.getMessageManager().get("privatemsg.socialspy-format", spy, java.util.Map.of(
+                        "sender", senderName,
+                        "target", targetName,
+                        "message", message
+                )));
             }
         }
     }

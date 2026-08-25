@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * 频道数据类
@@ -135,6 +136,28 @@ public class Channel {
      */
     public boolean isCrossServerEnabled() {
         return crossServer && !isLocalChannel();
+    }
+
+    public Channel localized(UnaryOperator<String> resolver) {
+        Map<String, ChannelSegmentConfig> localizedSegments = new LinkedHashMap<>();
+        segmentConfigs.forEach((key, value) -> localizedSegments.put(key, value.localized(resolver)));
+        return new Channel(
+                id,
+                resolver.apply(name),
+                type,
+                resolver.apply(format),
+                permission,
+                shortcut,
+                radius,
+                isDefault,
+                crossServer,
+                hoverEnabled,
+                hoverText.stream().map(resolver).toList(),
+                clickEnabled,
+                clickAction,
+                clickValue,
+                localizedSegments
+        );
     }
 
     private Map<String, ChannelSegmentConfig> normalizeSegmentConfigs(Map<String, ChannelSegmentConfig> source) {

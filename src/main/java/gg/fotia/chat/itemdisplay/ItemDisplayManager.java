@@ -57,22 +57,29 @@ public class ItemDisplayManager {
     private boolean handItemEnabled;
     private String handItemPlaceholder;
     private String handItemEmptyHand;
+    private String handItemEmptyHandKey;
     private String handItemPermission;
     private HandItemDisplayMode handItemDisplayMode = HandItemDisplayMode.NATIVE;
     private String handItemGuiDisplay = "<!i><aqua>[{item_name}]</aqua>";
+    private String handItemGuiDisplayKey;
     private List<String> handItemGuiHover = List.of();
+    private List<String> handItemGuiHoverKeys = List.of();
 
     private boolean inventoryEnabled;
     private String inventoryPlaceholder;
     private String inventoryFormat;
+    private String inventoryFormatKey;
     private List<String> inventoryHover;
+    private List<String> inventoryHoverKeys = List.of();
     private String inventoryPermission;
     private String inventoryViewPermission;
 
     private boolean enderchestEnabled;
     private String enderchestPlaceholder;
     private String enderchestFormat;
+    private String enderchestFormatKey;
     private List<String> enderchestHover;
+    private List<String> enderchestHoverKeys = List.of();
     private String enderchestPermission;
     private String enderchestViewPermission;
 
@@ -116,11 +123,14 @@ public class ItemDisplayManager {
         if (handConfig != null) {
             handItemEnabled = handConfig.getBoolean("enabled", true);
             handItemPlaceholder = handConfig.getString("placeholder", "[i]");
-            handItemEmptyHand = handConfig.getString("empty-hand", "<!i><gray>[绌篯</gray>");
+            handItemEmptyHand = handConfig.getString("empty-hand", "<!i><gray>[空手]</gray>");
+            handItemEmptyHandKey = handConfig.getString("empty-hand-key", "");
             handItemPermission = handConfig.getString("permission", "fotiachat.item.hand");
             handItemDisplayMode = HandItemDisplayMode.fromId(handConfig.getString("display-mode", "NATIVE"));
             handItemGuiDisplay = handConfig.getString("gui-display", "<!i><aqua>[{item_name}]</aqua>");
+            handItemGuiDisplayKey = handConfig.getString("gui-display-key", "");
             handItemGuiHover = handConfig.getStringList("gui-hover");
+            handItemGuiHoverKeys = handConfig.getStringList("gui-hover-keys");
         }
 
         // 鑳屽寘閰嶇疆
@@ -128,8 +138,10 @@ public class ItemDisplayManager {
         if (invConfig != null) {
             inventoryEnabled = invConfig.getBoolean("enabled", true);
             inventoryPlaceholder = invConfig.getString("placeholder", "[inv]");
-            inventoryFormat = invConfig.getString("format", "<!i><gold>[鏌ョ湅鑳屽寘]</gold>");
+            inventoryFormat = invConfig.getString("format", "<!i><gold>[查看背包]</gold>");
+            inventoryFormatKey = invConfig.getString("format-key", "");
             inventoryHover = invConfig.getStringList("hover");
+            inventoryHoverKeys = invConfig.getStringList("hover-keys");
             inventoryPermission = invConfig.getString("permission", "fotiachat.item.inventory");
             inventoryViewPermission = invConfig.getString("view-permission", "fotiachat.item.inventory.view");
         }
@@ -139,8 +151,10 @@ public class ItemDisplayManager {
         if (ecConfig != null) {
             enderchestEnabled = ecConfig.getBoolean("enabled", true);
             enderchestPlaceholder = ecConfig.getString("placeholder", "[ec]");
-            enderchestFormat = ecConfig.getString("format", "<!i><dark_purple>[鏌ョ湅鏈奖绠盷</dark_purple>");
+            enderchestFormat = ecConfig.getString("format", "<!i><dark_purple>[查看末影箱]</dark_purple>");
+            enderchestFormatKey = ecConfig.getString("format-key", "");
             enderchestHover = ecConfig.getStringList("hover");
+            enderchestHoverKeys = ecConfig.getStringList("hover-keys");
             enderchestPermission = ecConfig.getString("permission", "fotiachat.item.enderchest");
             enderchestViewPermission = ecConfig.getString("view-permission", "fotiachat.item.enderchest.view");
         }
@@ -284,12 +298,12 @@ public class ItemDisplayManager {
      */
     private Component processHandItem(Player player) {
         if (!player.hasPermission(handItemPermission)) {
-            return miniMessage.deserialize(handItemEmptyHand);
+            return miniMessage.deserialize(localized(player, handItemEmptyHandKey, handItemEmptyHand));
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item.getType() == Material.AIR) {
-            return miniMessage.deserialize(handItemEmptyHand);
+            return miniMessage.deserialize(localized(player, handItemEmptyHandKey, handItemEmptyHand));
         }
 
         if (handItemDisplayMode == HandItemDisplayMode.GUI) {
@@ -311,19 +325,21 @@ public class ItemDisplayManager {
      */
     private Component processHandItemGui(Player player, ItemStack item) {
         ItemSnapshot snapshot = createHandItemSnapshot(player, item);
-        Component component = buildHandItemDisplayComponent(item);
+        Component component = buildHandItemDisplayComponent(player, item);
 
-        if (handItemGuiHover != null && !handItemGuiHover.isEmpty()) {
-            component = component.hoverEvent(HoverEvent.showText(buildItemHover(item, handItemGuiHover)));
+        List<String> hoverLines = localizedList(player, handItemGuiHoverKeys, handItemGuiHover);
+        if (!hoverLines.isEmpty()) {
+            component = component.hoverEvent(HoverEvent.showText(buildItemHover(item, hoverLines)));
         }
 
         return component.clickEvent(ClickEvent.runCommand("/fotiachat viewsnapshot " + snapshot.id()));
     }
 
-    private Component buildHandItemDisplayComponent(ItemStack item) {
-        String safeFormat = handItemGuiDisplay == null || handItemGuiDisplay.isEmpty()
+    private Component buildHandItemDisplayComponent(Player player, ItemStack item) {
+        String localizedFormat = localized(player, handItemGuiDisplayKey, handItemGuiDisplay);
+        String safeFormat = localizedFormat == null || localizedFormat.isEmpty()
                 ? "<!i><aqua>[{item_name}]</aqua>"
-                : handItemGuiDisplay;
+                : localizedFormat;
 
         String processed = safeFormat
                 .replace("{amount}", String.valueOf(item.getAmount()))
@@ -338,10 +354,11 @@ public class ItemDisplayManager {
         );
     }
 
-    private String buildHandItemDisplayText(ItemStack item) {
-        String safeFormat = handItemGuiDisplay == null || handItemGuiDisplay.isEmpty()
+    private String buildHandItemDisplayText(Player player, ItemStack item) {
+        String localizedFormat = localized(player, handItemGuiDisplayKey, handItemGuiDisplay);
+        String safeFormat = localizedFormat == null || localizedFormat.isEmpty()
                 ? "<!i><aqua>[{item_name}]</aqua>"
-                : handItemGuiDisplay;
+                : localizedFormat;
 
         return safeFormat.replace("{item_name}", getItemDisplayName(item))
                 .replace("{amount}", String.valueOf(item.getAmount()));
@@ -355,12 +372,13 @@ public class ItemDisplayManager {
         ItemSnapshot snapshot = createInventorySnapshot(player);
         int itemCount = countItems(snapshot.contents());
 
-        String format = inventoryFormat;
+        String format = localized(player, inventoryFormatKey, inventoryFormat);
         Component component = miniMessage.deserialize(format);
 
         // 娣诲姞鎮诞鏂囨湰
-        if (inventoryHover != null && !inventoryHover.isEmpty()) {
-            Component hoverText = buildSnapshotHover(player.getName(), itemCount, inventoryHover);
+        List<String> hoverLines = localizedList(player, inventoryHoverKeys, inventoryHover);
+        if (!hoverLines.isEmpty()) {
+            Component hoverText = buildSnapshotHover(player.getName(), itemCount, hoverLines);
             component = component.hoverEvent(HoverEvent.showText(hoverText));
         }
 
@@ -382,12 +400,13 @@ public class ItemDisplayManager {
         ItemSnapshot snapshot = createEnderchestSnapshot(player);
         int itemCount = countItems(snapshot.contents());
 
-        String format = enderchestFormat;
+        String format = localized(player, enderchestFormatKey, enderchestFormat);
         Component component = miniMessage.deserialize(format);
 
         // 娣诲姞鎮诞鏂囨湰
-        if (enderchestHover != null && !enderchestHover.isEmpty()) {
-            Component hoverText = buildSnapshotHover(player.getName(), itemCount, enderchestHover);
+        List<String> hoverLines = localizedList(player, enderchestHoverKeys, enderchestHover);
+        if (!hoverLines.isEmpty()) {
+            Component hoverText = buildSnapshotHover(player.getName(), itemCount, hoverLines);
             component = component.hoverEvent(HoverEvent.showText(hoverText));
         }
 
@@ -747,6 +766,20 @@ public class ItemDisplayManager {
         return count;
     }
 
+    private String localized(Player player, String key, String fallback) {
+        return key == null || key.isBlank() ? fallback : plugin.getMessageManager().getRaw(player, key);
+    }
+
+    private List<String> localizedList(Player player, List<String> keys, List<String> fallback) {
+        if (keys == null || keys.isEmpty()) {
+            return fallback == null ? List.of() : fallback;
+        }
+        return keys.stream()
+                .filter(key -> key != null && !key.isBlank())
+                .map(key -> plugin.getMessageManager().getRaw(player, key))
+                .toList();
+    }
+
     /**
      * 鍚姩娓呯悊浠诲姟
      */
@@ -830,16 +863,18 @@ public class ItemDisplayManager {
      */
     private String getHandItemTextForCrossServer(Player player) {
         if (!player.hasPermission(handItemPermission)) {
-            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(handItemEmptyHand));
+            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(
+                    localized(player, handItemEmptyHandKey, handItemEmptyHand)));
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item.getType() == Material.AIR) {
-            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(handItemEmptyHand));
+            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(
+                    localized(player, handItemEmptyHandKey, handItemEmptyHand)));
         }
 
         if (handItemDisplayMode == HandItemDisplayMode.GUI) {
-            return buildHandItemDisplayText(item);
+            return buildHandItemDisplayText(player, item);
         }
 
         String itemName = getItemDisplayName(item);
@@ -856,7 +891,7 @@ public class ItemDisplayManager {
             return "";
         }
         // 杩斿洖鏍煎紡鍖栨枃鏈紙涓嶅甫鐐瑰嚮浜嬩欢锛?
-        return inventoryFormat;
+        return localized(player, inventoryFormatKey, inventoryFormat);
     }
 
     /**
@@ -867,7 +902,7 @@ public class ItemDisplayManager {
             return "";
         }
         // 杩斿洖鏍煎紡鍖栨枃鏈紙涓嶅甫鐐瑰嚮浜嬩欢锛?
-        return enderchestFormat;
+        return localized(player, enderchestFormatKey, enderchestFormat);
     }
 
     private enum HandItemDisplayMode {

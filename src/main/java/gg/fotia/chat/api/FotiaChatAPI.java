@@ -23,6 +23,8 @@ import java.util.UUID;
  */
 public class FotiaChatAPI {
 
+    public static final String API_VERSION = "1.1.1";
+
     private static FotiaChat plugin;
 
     /**
@@ -39,6 +41,14 @@ public class FotiaChatAPI {
         return plugin;
     }
 
+    public static String getApiVersion() {
+        return API_VERSION;
+    }
+
+    public static ChatPipeline getChatPipeline() {
+        return plugin.getChatPipeline();
+    }
+
     /**
      * 获取配置管理器
      */
@@ -51,6 +61,27 @@ public class FotiaChatAPI {
      */
     public static MessageManager getMessageManager() {
         return plugin.getMessageManager();
+    }
+
+    /**
+     * 获取按玩家客户端语言解析后的语言标识。
+     */
+    public static String getPlayerLocale(Player player) {
+        return plugin.getMessageManager().getLocale(player);
+    }
+
+    /**
+     * 获取按玩家客户端语言解析后的原始翻译文本。
+     */
+    public static String getLocalizedText(Player player, String key) {
+        return plugin.getMessageManager().getRaw(player, key);
+    }
+
+    /**
+     * 获取按玩家客户端语言解析并替换占位符后的原始翻译文本。
+     */
+    public static String getLocalizedText(Player player, String key, java.util.Map<String, String> placeholders) {
+        return plugin.getMessageManager().getRaw(player, key, placeholders);
     }
 
     /**
@@ -149,6 +180,14 @@ public class FotiaChatAPI {
      */
     public static void unregisterPublicChatInterceptor(PublicChatInterceptor interceptor) {
         plugin.unregisterPublicChatInterceptor(interceptor);
+    }
+
+    public static void registerChatRouteInterceptor(ChatRouteInterceptor interceptor) {
+        plugin.registerChatRouteInterceptor(interceptor);
+    }
+
+    public static void unregisterChatRouteInterceptor(ChatRouteInterceptor interceptor) {
+        plugin.unregisterChatRouteInterceptor(interceptor);
     }
 
     /**

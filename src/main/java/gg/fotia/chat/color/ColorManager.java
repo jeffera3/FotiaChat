@@ -64,7 +64,10 @@ public class ColorManager {
     }
 
     private ChatColor loadColor(String id, ConfigurationSection section) {
-        String name = section.getString("name", id);
+        String nameKey = section.getString("name-key", "");
+        String name = nameKey == null || nameKey.isBlank()
+                ? section.getString("name", id)
+                : "lang:" + nameKey;
 
         ColorType type;
         try {
@@ -167,6 +170,13 @@ public class ColorManager {
      */
     public ChatColor getColor(String id) {
         return colors.get(id);
+    }
+
+    public String getDisplayName(Player player, ChatColor color) {
+        if (color == null) {
+            return "";
+        }
+        return plugin.getMessageManager().resolveConfigured(player, color.getName());
     }
 
     /**

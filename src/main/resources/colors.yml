@@ -18,54 +18,63 @@ colors:
   # 基础颜色
   white:
     name: "<!i><white>白色</white>"
+    name-key: "colors.white"
     type: SINGLE
     format: "<white>"
     permission: ""
 
   gray:
     name: "<!i><gray>灰色</gray>"
+    name-key: "colors.gray"
     type: SINGLE
     format: "<gray>"
     permission: ""
 
   red:
     name: "<!i><red>红色</red>"
+    name-key: "colors.red"
     type: SINGLE
     format: "<red>"
     permission: "fotiachat.color.red"
 
   green:
     name: "<!i><green>绿色</green>"
+    name-key: "colors.green"
     type: SINGLE
     format: "<green>"
     permission: "fotiachat.color.green"
 
   blue:
     name: "<!i><blue>蓝色</blue>"
+    name-key: "colors.blue"
     type: SINGLE
     format: "<blue>"
     permission: "fotiachat.color.blue"
 
   yellow:
     name: "<!i><yellow>黄色</yellow>"
+    name-key: "colors.yellow"
     type: SINGLE
     format: "<yellow>"
     permission: "fotiachat.color.yellow"
 
   gold:
     name: "<!i><gold>金色</gold>"
+    name-key: "colors.gold"
     type: SINGLE
     format: "<gold>"
     permission: "fotiachat.color.gold"
 
   aqua:
     name: "<!i><aqua>青色</aqua>"
+    name-key: "colors.aqua"
     type: SINGLE
     format: "<aqua>"
     permission: "fotiachat.color.aqua"
 
   light_purple:
     name: "<!i><light_purple>粉色</light_purple>"
+    name-key: "colors.light-purple"
     type: SINGLE
     format: "<light_purple>"
     permission: "fotiachat.color.light_purple"
@@ -73,30 +82,35 @@ colors:
   # 渐变颜色
   sunset:
     name: "<!i><gradient:#FF6B6B:#FFE66D>日落渐变</gradient>"
+    name-key: "colors.sunset"
     type: GRADIENT
     format: "#FF6B6B:#FFE66D"
     permission: "fotiachat.color.gradient.sunset"
 
   ocean:
     name: "<!i><gradient:#667eea:#764ba2>海洋渐变</gradient>"
+    name-key: "colors.ocean"
     type: GRADIENT
     format: "#667eea:#764ba2"
     permission: "fotiachat.color.gradient.ocean"
 
   forest:
     name: "<!i><gradient:#11998e:#38ef7d>森林渐变</gradient>"
+    name-key: "colors.forest"
     type: GRADIENT
     format: "#11998e:#38ef7d"
     permission: "fotiachat.color.gradient.forest"
 
   fire:
     name: "<!i><gradient:#f12711:#f5af19>火焰渐变</gradient>"
+    name-key: "colors.fire"
     type: GRADIENT
     format: "#f12711:#f5af19"
     permission: "fotiachat.color.gradient.fire"
 
   ice:
     name: "<!i><gradient:#74ebd5:#ACB6E5>冰霜渐变</gradient>"
+    name-key: "colors.ice"
     type: GRADIENT
     format: "#74ebd5:#ACB6E5"
     permission: "fotiachat.color.gradient.ice"
@@ -104,6 +118,7 @@ colors:
   # 彩虹颜色
   rainbow:
     name: "<!i><rainbow>彩虹色</rainbow>"
+    name-key: "colors.rainbow"
     type: RAINBOW
     format: ""
     permission: "fotiachat.color.rainbow"

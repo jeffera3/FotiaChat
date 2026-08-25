@@ -1,133 +1,65 @@
 package gg.fotia.chat.manager;
 
 import gg.fotia.chat.FotiaChat;
+import gg.fotia.chat.localization.LocalizationService;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MessageManager {
 
     private final FotiaChat plugin;
-    private FileConfiguration messages;
-    private final Map<String, String> messageCache = new HashMap<>();
+    private final LocalizationService localization;
 
     public MessageManager(FotiaChat plugin) {
         this.plugin = plugin;
+        this.localization = new LocalizationService(plugin);
     }
 
     public void loadMessages() {
-        messageCache.clear();
-
-        String language = plugin.getConfigManager().getLanguage();
-        saveDefaultMessages(language);
-
-        File messagesFile = new File(plugin.getDataFolder(), "messages/" + language + ".yml");
-        if (!messagesFile.exists()) {
-            // 如果指定语言文件不存在，使用默认语言
-            plugin.getLogger().warning("语言文件 " + language + ".yml 不存在，使用默认语言 zh_CN");
-            messagesFile = new File(plugin.getDataFolder(), "messages/zh_CN.yml");
-        }
-
-        messages = YamlConfiguration.loadConfiguration(messagesFile);
-
-        // 合并默认消息
-        InputStream defaultStream = plugin.getResource("messages/" + language + ".yml");
-        if (defaultStream != null) {
-            YamlConfiguration defaultMessages = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(defaultStream, StandardCharsets.UTF_8));
-            messages.setDefaults(defaultMessages);
-        }
-
-        // 缓存所有消息
-        for (String key : messages.getKeys(true)) {
-            if (messages.isString(key)) {
-                messageCache.put(key, messages.getString(key));
-            }
-        }
-
-        plugin.getLogger().info("已加载语言文件: " + language + ".yml");
+        ConfigManager config = plugin.getConfigManager();
+        localization.load(
+                config.getLanguage(),
+                config.isUseClientLocale(),
+                config.isWarnMissingTranslation()
+        );
     }
 
-    private void saveDefaultMessages(String language) {
-        File messagesDir = new File(plugin.getDataFolder(), "messages");
-        if (!messagesDir.exists()) {
-            messagesDir.mkdirs();
-        }
-
-        // 保存中文语言文件
-        File zhFile = new File(messagesDir, "zh_CN.yml");
-        if (!zhFile.exists()) {
-            plugin.saveResource("messages/zh_CN.yml", false);
-        }
-
-        // 保存英文语言文件
-        File enFile = new File(messagesDir, "en_US.yml");
-        if (!enFile.exists()) {
-            plugin.saveResource("messages/en_US.yml", false);
-        }
-    }
-
-    /**
-     * 获取原始消息字符串
-     */
     public String getRaw(String key) {
-        return messageCache.getOrDefault(key, messages.getString(key, key));
+        return localization.translateDefault(key);
     }
 
-    /**
-     * 获取消息字符串，支持占位符替换
-     */
+    public String getRaw(Player player, String key) {
+        return localization.translate(player, key);
+    }
+
     public String getRaw(String key, Map<String, String> placeholders) {
-        String message = getRaw(key);
-        if (placeholders != null) {
-            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-                message = message.replace("{" + entry.getKey() + "}", entry.getValue());
-            }
-        }
-        return message;
+        return replacePlaceholders(getRaw(key), placeholders);
     }
 
-    /**
-     * 获取解析后的Component消息
-     */
+    public String getRaw(Player player, String key, Map<String, String> placeholders) {
+        return replacePlaceholders(getRaw(player, key), placeholders);
+    }
+
     public Component get(String key) {
         return MessageUtil.parse(getRaw(key));
     }
 
-    /**
-     * 获取解析后的Component消息，支持占位符替换
-     */
     public Component get(String key, Map<String, String> placeholders) {
         return MessageUtil.parse(getRaw(key, placeholders));
     }
 
-    /**
-     * 获取解析后的Component消息，支持玩家占位符
-     */
     public Component get(String key, Player player) {
-        return MessageUtil.parse(getRaw(key), player);
+        return MessageUtil.parse(getRaw(player, key), player);
     }
 
-    /**
-     * 获取解析后的Component消息，支持玩家和自定义占位符
-     */
     public Component get(String key, Player player, Map<String, String> placeholders) {
-        return MessageUtil.parse(getRaw(key, placeholders), player);
+        return MessageUtil.parse(getRaw(player, key, placeholders), player);
     }
 
-    /**
-     * 发送消息给命令发送者
-     */
     public void send(CommandSender sender, String key) {
         if (sender instanceof Player player) {
             player.sendMessage(get(key, player));
@@ -136,14 +68,44 @@ public class MessageManager {
         }
     }
 
-    /**
-     * 发送消息给命令发送者，支持占位符
-     */
     public void send(CommandSender sender, String key, Map<String, String> placeholders) {
         if (sender instanceof Player player) {
             player.sendMessage(get(key, player, placeholders));
         } else {
             sender.sendMessage(get(key, placeholders));
         }
+    }
+
+    public String getLocale(Player player) {
+        return localization.locale(player);
+    }
+
+    public LocalizationService getLocalization() {
+        return localization;
+    }
+
+    public String resolveConfigured(Player player, String text) {
+        if (text == null || !text.startsWith("lang:")) {
+            return text == null ? "" : text;
+        }
+        return getRaw(player, text.substring("lang:".length()));
+    }
+
+    public String resolveConfigured(String text) {
+        if (text == null || !text.startsWith("lang:")) {
+            return text == null ? "" : text;
+        }
+        return getRaw(text.substring("lang:".length()));
+    }
+
+    private String replacePlaceholders(String message, Map<String, String> placeholders) {
+        if (placeholders == null || placeholders.isEmpty()) {
+            return message;
+        }
+        String result = message;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            result = result.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return result;
     }
 }

@@ -46,7 +46,7 @@ public class ChatIgnoreCommand implements CommandExecutor, TabCompleter {
 
         if (args.length < 1) {
             plugin.getMessageManager().send(player, "general.invalid-args",
-                    Map.of("usage", "/chatignore <玩家名|list>"));
+                    Map.of("usage", plugin.getMessageManager().getRaw(player, "command.usage.chatignore")));
             return true;
         }
 

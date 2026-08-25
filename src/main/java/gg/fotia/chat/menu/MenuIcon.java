@@ -1,6 +1,7 @@
 package gg.fotia.chat.menu;
 
 import gg.fotia.chat.FotiaChat;
+import gg.fotia.chat.manager.MessageManager;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -102,12 +103,20 @@ public class MenuIcon {
     private final int modelData;
     private final String tooltip;
     private final String name;
+    private final String nameKey;
     private final List<String> lore;
+    private final List<String> loreKeys;
     private final Map<String, List<String>> clickActions;
+    private final MessageManager messageManager;
 
     public MenuIcon(String id, ConfigurationSection section) {
+        this(id, section, null);
+    }
+
+    public MenuIcon(String id, ConfigurationSection section, MessageManager messageManager) {
         this.id = id;
         this.clickActions = new HashMap<>();
+        this.messageManager = messageManager;
 
         ConfigurationSection displaySection = section.getConfigurationSection("display");
         if (displaySection != null) {
@@ -119,7 +128,9 @@ public class MenuIcon {
             this.modelData = displaySection.getInt("model_data", 0);
             this.tooltip = displaySection.getString("tooltip", null);
             this.name = displaySection.getString("name", "");
+            this.nameKey = displaySection.getString("Name-Key", "");
             this.lore = displaySection.getStringList("lore");
+            this.loreKeys = List.copyOf(displaySection.getStringList("Lore-Keys"));
         } else {
             this.material = Material.STONE;
             this.craftEngineItem = "";
@@ -127,7 +138,9 @@ public class MenuIcon {
             this.modelData = 0;
             this.tooltip = null;
             this.name = "";
+            this.nameKey = "";
             this.lore = new ArrayList<>();
+            this.loreKeys = List.of();
         }
 
         ConfigurationSection actionsSection = section.getConfigurationSection("actions");
@@ -212,15 +225,17 @@ public class MenuIcon {
 
         if (meta != null) {
             // 设置名称
-            if (!name.isEmpty()) {
-                String parsedName = parsePlaceholders(name, player);
+            String resolvedName = resolveConfigured(player, nameKey, name);
+            if (!resolvedName.isEmpty()) {
+                String parsedName = parsePlaceholders(resolvedName, player);
                 meta.displayName(MessageUtil.parse(parsedName));
             }
 
             // 设置描述
-            if (!lore.isEmpty()) {
+            List<String> resolvedLore = resolveLore(player);
+            if (!resolvedLore.isEmpty()) {
                 List<Component> loreComponents = new ArrayList<>();
-                for (String line : lore) {
+                for (String line : resolvedLore) {
                     String parsedLine = parsePlaceholders(line, player);
                     loreComponents.add(MessageUtil.parse(parsedLine));
                 }
@@ -260,6 +275,27 @@ public class MenuIcon {
         }
 
         return item;
+    }
+
+    private String resolveConfigured(Player player, String key, String fallback) {
+        if (messageManager != null && key != null && !key.isBlank()) {
+            return messageManager.getRaw(player, key);
+        }
+        return fallback;
+    }
+
+    private List<String> resolveLore(Player player) {
+        if (messageManager == null || loreKeys.isEmpty()) {
+            return lore;
+        }
+
+        List<String> resolved = new ArrayList<>(loreKeys.size());
+        for (String key : loreKeys) {
+            if (key != null && !key.isBlank()) {
+                resolved.add(messageManager.getRaw(player, key));
+            }
+        }
+        return resolved;
     }
 
     private String parsePlaceholders(String text, Player player) {

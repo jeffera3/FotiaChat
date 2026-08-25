@@ -41,7 +41,7 @@ public class ChannelCommand implements CommandExecutor, TabCompleter {
             // 显示当前频道
             Channel current = channelManager.getPlayerChannel(player);
             plugin.getMessageManager().send(player, "channel.current",
-                    Map.of("channel", current.getName()));
+                    Map.of("channel", plugin.getMessageManager().resolveConfigured(player, current.getName())));
             return true;
         }
 
@@ -65,7 +65,7 @@ public class ChannelCommand implements CommandExecutor, TabCompleter {
         // 切换频道
         channelManager.setPlayerChannel(player, channelId);
         plugin.getMessageManager().send(player, "channel.switched",
-                Map.of("channel", channel.getName()));
+                Map.of("channel", plugin.getMessageManager().resolveConfigured(player, channel.getName())));
 
         return true;
     }

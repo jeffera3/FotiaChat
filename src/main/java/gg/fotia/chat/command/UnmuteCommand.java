@@ -42,8 +42,11 @@ public class UnmuteCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length < 1) {
+            String usage = sender instanceof Player player
+                    ? plugin.getMessageManager().getRaw(player, "command.usage.unmute")
+                    : plugin.getMessageManager().getRaw("command.usage.unmute");
             plugin.getMessageManager().send(sender, "general.invalid-args",
-                    Map.of("usage", "/unmute <玩家>"));
+                    Map.of("usage", usage));
             return true;
         }
 

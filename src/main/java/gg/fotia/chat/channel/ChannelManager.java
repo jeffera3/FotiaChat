@@ -86,10 +86,11 @@ public class ChannelManager {
     }
 
     private Channel loadChannel(String id, ConfigurationSection section) {
-        String name = section.getString("name", id);
+        String name = localizedValue(section, "name", id);
         String typeStr = section.getString("type", "PUBLIC");
         ChannelType type = ChannelType.fromId(typeStr);
-        String format = section.getString("format", "<!i><gray>[<white>{channel}</white>]</gray> <white>{player}</white><gray>:</gray> {message}");
+        String format = localizedValue(section, "format",
+                "<!i><gray>[<white>{channel}</white>]</gray> <white>{player}</white><gray>:</gray> {message}");
         String permission = section.getString("permission", type.getPermission());
         String shortcut = section.getString("shortcut", "");
         int radius = section.getInt("radius", 0);
@@ -103,7 +104,7 @@ public class ChannelManager {
         if (hoverSection != null) {
             if (hoverSection.contains("enabled") || hoverSection.contains("text")) {
                 hoverEnabled = hoverSection.getBoolean("enabled", false);
-                hoverText = hoverSection.getStringList("text");
+                hoverText = localizedList(hoverSection, "text");
             }
             loadSegmentHoverConfigs(hoverSection, segmentConfigs);
         }
@@ -144,9 +145,9 @@ public class ChannelManager {
             }
 
             MutableSegmentConfig config = segmentConfigs.computeIfAbsent(segmentKey, key -> new MutableSegmentConfig());
-            config.display = segmentSection.getString("display", defaultSegmentDisplay(segmentKey));
+            config.display = localizedValue(segmentSection, "display", defaultSegmentDisplay(segmentKey));
             config.hoverEnabled = segmentSection.getBoolean("enabled", true);
-            config.hoverText = new ArrayList<>(segmentSection.getStringList("text"));
+            config.hoverText = new ArrayList<>(localizedList(segmentSection, "text"));
         }
     }
 
@@ -196,6 +197,19 @@ public class ChannelManager {
             case "message" -> "{message}";
             default -> "";
         };
+    }
+
+    private String localizedValue(ConfigurationSection section, String path, String fallback) {
+        String key = section.getString(path + "-key", "");
+        return key == null || key.isBlank() ? section.getString(path, fallback) : "lang:" + key;
+    }
+
+    private List<String> localizedList(ConfigurationSection section, String path) {
+        List<String> keys = section.getStringList(path + "-keys");
+        if (!keys.isEmpty()) {
+            return keys.stream().map(key -> "lang:" + key).toList();
+        }
+        return section.getStringList(path);
     }
 
     public Channel getChannel(String id) {

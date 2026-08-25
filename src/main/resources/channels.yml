@@ -9,6 +9,7 @@
 channels:
   global:
     name: "公共"
+    name-key: "channels.global.name"
     type: PUBLIC
     format: "<!i>{channel} {player}<gray>:</gray> {message}"
     shortcut: "!"
@@ -17,14 +18,22 @@ channels:
     hover:
       channel:
         display: "<!i><gray>[<white>公共</white>]</gray>"
+        display-key: "channels.global.display"
         text:
           - "<!i><gray>频道: <white>{channel}</white></gray>"
           - "<!i><gray>全服公共聊天频道</gray>"
+        text-keys:
+          - "channels.global.hover-name"
+          - "channels.global.hover-description"
       player:
         display: "<!i><white>{player}</white>"
+        display-key: "channels.common.player-display"
         text:
           - "<!i><gray>玩家: <white>%player_name%</white></gray>"
           - "<!i><gray>点击私聊该玩家</gray>"
+        text-keys:
+          - "channels.common.player-hover"
+          - "channels.common.player-click"
       # message:
       #   display: "{message}"
       #   text:
@@ -41,6 +50,7 @@ channels:
 
   local:
     name: "本地"
+    name-key: "channels.local.name"
     type: LOCAL
     format: "<!i>{channel} {player}<gray>:</gray> {message}"
     shortcut: "#"
@@ -50,14 +60,22 @@ channels:
     hover:
       channel:
         display: "<!i><gray>[<yellow>本地</yellow>]</gray>"
+        display-key: "channels.local.display"
         text:
           - "<!i><yellow>本地频道</yellow>"
           - "<!i><gray>仅附近玩家可见</gray>"
+        text-keys:
+          - "channels.local.hover-name"
+          - "channels.local.hover-description"
       player:
         display: "<!i><white>{player}</white>"
+        display-key: "channels.common.player-display"
         text:
           - "<!i><gray>玩家: <white>%player_name%</white></gray>"
           - "<!i><gray>点击私聊该玩家</gray>"
+        text-keys:
+          - "channels.common.player-hover"
+          - "channels.common.player-click"
     click:
       player:
         enabled: true
@@ -66,6 +84,7 @@ channels:
 
   admin:
     name: "管理"
+    name-key: "channels.admin.name"
     type: ADMIN
     format: "<!i>{channel} {player}<gray>:</gray> {message}"
     permission: "fotiachat.channel.admin"
@@ -75,14 +94,22 @@ channels:
     hover:
       channel:
         display: "<!i><gray>[<red>管理</red>]</gray>"
+        display-key: "channels.admin.display"
         text:
           - "<!i><red>管理频道</red>"
           - "<!i><gray>仅管理员可使用</gray>"
+        text-keys:
+          - "channels.admin.hover-name"
+          - "channels.admin.hover-description"
       player:
         display: "<!i><white>{player}</white>"
+        display-key: "channels.common.player-display"
         text:
           - "<!i><gray>管理员: <red>%player_name%</red></gray>"
           - "<!i><gray>点击查看玩家信息</gray>"
+        text-keys:
+          - "channels.admin.player-hover"
+          - "channels.admin.player-click"
     click:
       player:
         enabled: true
@@ -91,6 +118,7 @@ channels:
 
   help:
     name: "求助"
+    name-key: "channels.help.name"
     type: HELP
     format: "<!i>{channel} {player}<gray>:</gray> {message}"
     permission: "fotiachat.channel.help"
@@ -100,14 +128,22 @@ channels:
     hover:
       channel:
         display: "<!i><gray>[<aqua>求助</aqua>]</gray>"
+        display-key: "channels.help.display"
         text:
           - "<!i><aqua>求助频道</aqua>"
           - "<!i><gray>用于提问和请求帮助</gray>"
+        text-keys:
+          - "channels.help.hover-name"
+          - "channels.help.hover-description"
       player:
         display: "<!i><white>{player}</white>"
+        display-key: "channels.common.player-display"
         text:
           - "<!i><gray>玩家: <white>%player_name%</white></gray>"
           - "<!i><aqua>点击帮助该玩家</aqua>"
+        text-keys:
+          - "channels.common.player-hover"
+          - "channels.help.player-click"
     click:
       player:
         enabled: true

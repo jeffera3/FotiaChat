@@ -41,8 +41,11 @@ public class MuteCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length < 1) {
+            String usage = sender instanceof Player player
+                    ? plugin.getMessageManager().getRaw(player, "command.usage.mute")
+                    : plugin.getMessageManager().getRaw("command.usage.mute");
             plugin.getMessageManager().send(sender, "general.invalid-args",
-                    Map.of("usage", "/mute <玩家> [时长] [原因]"));
+                    Map.of("usage", usage));
             return true;
         }
 
@@ -65,7 +68,9 @@ public class MuteCommand implements CommandExecutor, TabCompleter {
         // 解析时长
         long duration = 0;
         String reason = "无";
-        String durationStr = "永久";
+        String durationStr = sender instanceof Player player
+                ? plugin.getMessageManager().getRaw(player, "admin.duration-permanent")
+                : plugin.getMessageManager().getRaw("admin.duration-permanent");
 
         if (args.length >= 2) {
             duration = TimeUtil.parseTime(args[1]);

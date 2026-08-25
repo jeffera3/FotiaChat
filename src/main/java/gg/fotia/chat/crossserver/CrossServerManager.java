@@ -2,7 +2,6 @@ package gg.fotia.chat.crossserver;
 
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.channel.Channel;
-import gg.fotia.chat.color.ChatColor;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -20,6 +19,8 @@ import java.util.function.Consumer;
  * 跨服通信管理器
  */
 public class CrossServerManager {
+
+    private static final String CROSS_SERVER_MESSAGE_MARKER = "\uE000FC_MESSAGE\uE001";
 
     private final FotiaChat plugin;
     private final RedisHandler redisHandler;
@@ -138,15 +139,33 @@ public class CrossServerManager {
             return;
         }
 
-        Component component = MessageUtil.parse(message.getMessage());
         String permission = channel.getPermission();
         UUID senderUuid = message.getSenderUuid();
         for (Player player : Bukkit.getOnlinePlayers()) {
             if ((permission == null || permission.isEmpty() || player.hasPermission(permission))
                     && (senderUuid == null || !plugin.getIgnoreManager().isIgnoring(player.getUniqueId(), senderUuid))) {
-                player.sendMessage(component);
+                if (message.getSenderName() == null || message.getSenderName().isEmpty()) {
+                    player.sendMessage(MessageUtil.parse(message.getMessage()));
+                } else {
+                    player.sendMessage(buildLocalizedChatMessage(player, channel, message));
+                }
             }
         }
+    }
+
+    private Component buildLocalizedChatMessage(Player viewer, Channel channel, CrossServerMessage message) {
+        Channel localizedChannel = channel.localized(text ->
+                plugin.getMessageManager().resolveConfigured(viewer, text));
+        String format = plugin.getMessageManager().getRaw(viewer, "crossserver.chat-format")
+                .replace("{server}", escapeMiniMessage(message.getServerName()))
+                .replace("{channel}", escapeMiniMessage(localizedChannel.getName()))
+                .replace("{player}", escapeMiniMessage(message.getSenderName()))
+                .replace("{message}", CROSS_SERVER_MESSAGE_MARKER);
+        Component trustedFormat = MessageUtil.parse(format, viewer);
+        Component untrustedMessage = MessageUtil.parse(message.getMessage());
+        return trustedFormat.replaceText(builder -> builder
+                .matchLiteral(CROSS_SERVER_MESSAGE_MARKER)
+                .replacement(untrustedMessage));
     }
 
     private void handlePrivateMessage(CrossServerMessage message) {
@@ -165,14 +184,18 @@ public class CrossServerManager {
         }
 
         // Premium 的内部协议由对应监听器消费。
-        if (msg.startsWith("SHOUT:") || msg.startsWith("CHATGAME:")) {
+        if (msg.startsWith("SHOUT:") || msg.startsWith("SHOUT2:") || msg.startsWith("CHATGAME:")) {
             return;
         }
 
-        String format = plugin.getMessageManager().getRaw("crossserver.broadcast-format");
-        format = format.replace("{server}", message.getServerName());
-        format = format.replace("{message}", msg);
-        Bukkit.broadcast(MessageUtil.parse(format));
+        Map<String, String> placeholders = Map.of(
+                "server", message.getServerName(),
+                "message", msg
+        );
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendMessage(plugin.getMessageManager().get(
+                    "crossserver.broadcast-format", player, placeholders));
+        }
     }
 
     public void registerBroadcastListener(Consumer<String> listener) {
@@ -210,9 +233,14 @@ public class CrossServerManager {
         if (!enabled || player == null || channel == null || !channel.isCrossServerEnabled()) return;
 
         String safeMessage = escapeMiniMessage(message == null ? "" : message);
-        ChatColor color = plugin.getColorManager().getPlayerColor(player);
-        Component formatted = plugin.getChatFormatter().format(player, channel, safeMessage, color);
-        sendFormattedChatMessage(channel, MessageUtil.toMiniMessage(formatted), player.getUniqueId());
+        sendMessage(new CrossServerMessage(
+                CrossServerMessage.TYPE_CHAT,
+                serverName,
+                player.getUniqueId(),
+                player.getName(),
+                channel.getId(),
+                safeMessage
+        ));
     }
 
     private String escapeMiniMessage(String message) {

@@ -12,6 +12,7 @@
 #   lore: 物品描述
 
 Title: '<!i><gradient:#FF6B6B:#4ECDC4>聊天颜色选择</gradient>'
+Title-Key: "menus.color.title"
 
 Layout:
   - '#########'
@@ -34,10 +35,15 @@ Icons:
     display:
       material: 'WHITE_DYE'
       name: '<!i><white>白色</white>'
+      Name-Key: "colors.white"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><white>预览: 这是白色文字</white>'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.white"
     actions:
       left,right:
         actions:
@@ -49,10 +55,15 @@ Icons:
     display:
       material: 'LIGHT_GRAY_DYE'
       name: '<!i><gray>灰色</gray>'
+      Name-Key: "colors.gray"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gray>预览: 这是灰色文字</gray>'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.gray"
     actions:
       left,right:
         actions:
@@ -64,12 +75,19 @@ Icons:
     display:
       material: 'RED_DYE'
       name: '<!i><red>红色</red>'
+      Name-Key: "colors.red"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><red>预览: 这是红色文字</red>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.red'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.red"
+        - "menus.common.blank"
+        - "menus.color.permission.red"
     actions:
       left,right:
         actions:
@@ -81,12 +99,19 @@ Icons:
     display:
       material: 'LIME_DYE'
       name: '<!i><green>绿色</green>'
+      Name-Key: "colors.green"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><green>预览: 这是绿色文字</green>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.green'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.green"
+        - "menus.common.blank"
+        - "menus.color.permission.green"
     actions:
       left,right:
         actions:
@@ -98,12 +123,19 @@ Icons:
     display:
       material: 'BLUE_DYE'
       name: '<!i><blue>蓝色</blue>'
+      Name-Key: "colors.blue"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><blue>预览: 这是蓝色文字</blue>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.blue'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.blue"
+        - "menus.common.blank"
+        - "menus.color.permission.blue"
     actions:
       left,right:
         actions:
@@ -115,12 +147,19 @@ Icons:
     display:
       material: 'YELLOW_DYE'
       name: '<!i><yellow>黄色</yellow>'
+      Name-Key: "colors.yellow"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><yellow>预览: 这是黄色文字</yellow>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.yellow'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.yellow"
+        - "menus.common.blank"
+        - "menus.color.permission.yellow"
     actions:
       left,right:
         actions:
@@ -132,12 +171,19 @@ Icons:
     display:
       material: 'ORANGE_DYE'
       name: '<!i><gold>金色</gold>'
+      Name-Key: "colors.gold"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gold>预览: 这是金色文字</gold>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gold'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.gold"
+        - "menus.common.blank"
+        - "menus.color.permission.gold"
     actions:
       left,right:
         actions:
@@ -149,12 +195,19 @@ Icons:
     display:
       material: 'CYAN_DYE'
       name: '<!i><aqua>青色</aqua>'
+      Name-Key: "colors.aqua"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><aqua>预览: 这是青色文字</aqua>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.aqua'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.aqua"
+        - "menus.common.blank"
+        - "menus.color.permission.aqua"
     actions:
       left,right:
         actions:
@@ -166,12 +219,19 @@ Icons:
     display:
       material: 'PINK_DYE'
       name: '<!i><light_purple>粉色</light_purple>'
+      Name-Key: "colors.light-purple"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><light_purple>预览: 这是粉色文字</light_purple>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.light_purple'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.light-purple"
+        - "menus.common.blank"
+        - "menus.color.permission.light-purple"
     actions:
       left,right:
         actions:
@@ -183,12 +243,19 @@ Icons:
     display:
       material: 'BLAZE_POWDER'
       name: '<!i><gradient:#FF6B6B:#FFE66D>日落渐变</gradient>'
+      Name-Key: "colors.sunset"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gradient:#FF6B6B:#FFE66D>预览: 这是日落渐变文字</gradient>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gradient.sunset'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.sunset"
+        - "menus.common.blank"
+        - "menus.color.permission.sunset"
     actions:
       left,right:
         actions:
@@ -200,12 +267,19 @@ Icons:
     display:
       material: 'PRISMARINE_SHARD'
       name: '<!i><gradient:#667eea:#764ba2>海洋渐变</gradient>'
+      Name-Key: "colors.ocean"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gradient:#667eea:#764ba2>预览: 这是海洋渐变文字</gradient>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gradient.ocean'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.ocean"
+        - "menus.common.blank"
+        - "menus.color.permission.ocean"
     actions:
       left,right:
         actions:
@@ -217,12 +291,19 @@ Icons:
     display:
       material: 'OAK_LEAVES'
       name: '<!i><gradient:#11998e:#38ef7d>森林渐变</gradient>'
+      Name-Key: "colors.forest"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gradient:#11998e:#38ef7d>预览: 这是森林渐变文字</gradient>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gradient.forest'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.forest"
+        - "menus.common.blank"
+        - "menus.color.permission.forest"
     actions:
       left,right:
         actions:
@@ -234,12 +315,19 @@ Icons:
     display:
       material: 'FIRE_CHARGE'
       name: '<!i><gradient:#f12711:#f5af19>火焰渐变</gradient>'
+      Name-Key: "colors.fire"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gradient:#f12711:#f5af19>预览: 这是火焰渐变文字</gradient>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gradient.fire'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.fire"
+        - "menus.common.blank"
+        - "menus.color.permission.fire"
     actions:
       left,right:
         actions:
@@ -251,12 +339,19 @@ Icons:
     display:
       material: 'PACKED_ICE'
       name: '<!i><gradient:#74ebd5:#ACB6E5>冰霜渐变</gradient>'
+      Name-Key: "colors.ice"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><gradient:#74ebd5:#ACB6E5>预览: 这是冰霜渐变文字</gradient>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.gradient.ice'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.ice"
+        - "menus.common.blank"
+        - "menus.color.permission.ice"
     actions:
       left,right:
         actions:
@@ -295,12 +390,19 @@ Icons:
     display:
       material: 'NETHER_STAR'
       name: '<!i><rainbow>彩虹色</rainbow>'
+      Name-Key: "colors.rainbow"
       lore:
         - '<!i><gray>点击选择此颜色'
         - ''
         - '<!i><rainbow>预览: 这是彩虹色文字</rainbow>'
         - ''
         - '<!i><yellow>需要权限: fotiachat.color.rainbow'
+      Lore-Keys:
+        - "menus.color.select"
+        - "menus.common.blank"
+        - "menus.color.preview.rainbow"
+        - "menus.common.blank"
+        - "menus.color.permission.rainbow"
     actions:
       left,right:
         actions:
@@ -339,8 +441,11 @@ Icons:
     display:
       material: 'BARRIER'
       name: '<!i><red>重置为默认颜色</red>'
+      Name-Key: "menus.color.reset-name"
       lore:
         - '<!i><gray>点击重置聊天颜色'
+      Lore-Keys:
+        - "menus.color.reset-lore"
     actions:
       left,right:
         actions:

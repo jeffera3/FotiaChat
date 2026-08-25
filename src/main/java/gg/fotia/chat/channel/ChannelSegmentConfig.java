@@ -3,6 +3,7 @@ package gg.fotia.chat.channel;
 import net.kyori.adventure.text.event.ClickEvent;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * 频道格式分段配置
@@ -63,5 +64,17 @@ public class ChannelSegmentConfig {
 
     public boolean hasClick() {
         return clickEnabled && !clickValue.isEmpty();
+    }
+
+    public ChannelSegmentConfig localized(UnaryOperator<String> resolver) {
+        return new ChannelSegmentConfig(
+                id,
+                resolver.apply(display),
+                hoverEnabled,
+                hoverText.stream().map(resolver).toList(),
+                clickEnabled,
+                clickAction,
+                clickValue
+        );
     }
 }

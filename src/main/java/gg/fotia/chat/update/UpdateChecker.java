@@ -62,7 +62,7 @@ public class UpdateChecker {
             return;
         }
 
-        player.sendMessage(plugin.getMessageManager().get("update.available", Map.of(
+        player.sendMessage(plugin.getMessageManager().get("update.available", player, Map.of(
                 "current", updateInfo.currentVersion(),
                 "latest", updateInfo.latestVersion()
         )));
