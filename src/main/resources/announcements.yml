@@ -16,6 +16,7 @@ random: false
 #   sound: 播放音效 (可选)
 #   sound-volume: 音效音量 (默认1.0)
 #   sound-pitch: 音效音调 (默认1.0)
+#   conditions: 接收公告需要满足的条件 (可选，根节点之间为AND)
 #   hover: 悬浮显示配置 (可选)
 #   click: 点击事件配置 (可选)
 announcements:
@@ -162,3 +163,44 @@ announcements:
       enabled: true
       action: SUGGEST_COMMAND
       value: "/help "
+
+  # 条件公告示例
+  conditional_example:
+    enabled: false
+    permission: ""
+    interval: 600
+    conditions:
+      # 简写条件：列表中的值为OR
+      world:
+        - world
+        - world_resource
+      gamemode:
+        - SURVIVAL
+        - ADVENTURE
+
+      # 完整条件：支持PlaceholderAPI、数字比较和结果缓存
+      balance:
+        type: ">="
+        refresh-interval: 0
+        value:
+          value1: "%vault_eco_balance%"
+          value2: "1000"
+
+      # 组合条件：VIP权限或等级不低于30
+      vip_or_level:
+        type: "||"
+        value:
+          vip:
+            type: permission
+            value:
+              - fotiachat.vip
+          high_level:
+            type: ">="
+            value:
+              value1: "%player_level%"
+              value2: "30"
+    messages:
+      - "<!i><gold>[条件公告]</gold> <yellow>你满足这条公告的接收条件！</yellow>"
+    sound: "BLOCK_NOTE_BLOCK_CHIME"
+    sound-volume: 0.8
+    sound-pitch: 1.0

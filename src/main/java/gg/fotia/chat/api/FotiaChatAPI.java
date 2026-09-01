@@ -2,6 +2,7 @@ package gg.fotia.chat.api;
 
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.channel.Channel;
+import gg.fotia.chat.condition.ConditionRegistry;
 import gg.fotia.chat.channel.ChannelManager;
 import gg.fotia.chat.color.ColorManager;
 import gg.fotia.chat.crossserver.CrossServerManager;
@@ -23,7 +24,7 @@ import java.util.UUID;
  */
 public class FotiaChatAPI {
 
-    public static final String API_VERSION = "1.1.1";
+    public static final String API_VERSION = "1.1.2";
 
     private static FotiaChat plugin;
 
@@ -61,6 +62,13 @@ public class FotiaChatAPI {
      */
     public static MessageManager getMessageManager() {
         return plugin.getMessageManager();
+    }
+
+    /**
+     * 获取公告条件类型注册表。注册新类型后需要重载公告配置。
+     */
+    public static ConditionRegistry getAnnouncementConditionRegistry() {
+        return plugin.getAnnouncementManager().getConditionEngine().registry();
     }
 
     /**

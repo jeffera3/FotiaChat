@@ -1,5 +1,6 @@
 package gg.fotia.chat.announcement;
 
+import gg.fotia.chat.condition.ConditionSet;
 import net.kyori.adventure.text.event.ClickEvent;
 
 import java.util.List;
@@ -26,11 +27,21 @@ public class Announcement {
     private final boolean clickEnabled;
     private final ClickEvent.Action clickAction;
     private final String clickValue;
+    private final ConditionSet conditions;
 
     public Announcement(String id, String permission, int interval, List<String> messages,
                         boolean enabled, String sound, float soundVolume, float soundPitch,
                         boolean hoverEnabled, List<String> hoverText,
                         boolean clickEnabled, ClickEvent.Action clickAction, String clickValue) {
+        this(id, permission, interval, messages, enabled, sound, soundVolume, soundPitch,
+                hoverEnabled, hoverText, clickEnabled, clickAction, clickValue, ConditionSet.empty());
+    }
+
+    public Announcement(String id, String permission, int interval, List<String> messages,
+                        boolean enabled, String sound, float soundVolume, float soundPitch,
+                        boolean hoverEnabled, List<String> hoverText,
+                        boolean clickEnabled, ClickEvent.Action clickAction, String clickValue,
+                        ConditionSet conditions) {
         this.id = id;
         this.permission = permission;
         this.interval = interval;
@@ -44,6 +55,7 @@ public class Announcement {
         this.clickEnabled = clickEnabled;
         this.clickAction = clickAction;
         this.clickValue = clickValue;
+        this.conditions = conditions == null ? ConditionSet.empty() : conditions;
     }
 
     // 兼容旧构造函数
@@ -103,6 +115,10 @@ public class Announcement {
 
     public boolean isClickEnabled() {
         return clickEnabled;
+    }
+
+    public ConditionSet getConditions() {
+        return conditions;
     }
 
     public ClickEvent.Action getClickAction() {

@@ -55,7 +55,7 @@ commands:
     aliases: [fc]
   announcement:
     description: 公告管理命令
-    usage: /announcement <send|broadcast|list|toggle|reload>
+    usage: /announcement <send|broadcast|list|toggle|reload|test>
     aliases: [announce, ann]
     permission: fotiachat.command.announcement
   shout:

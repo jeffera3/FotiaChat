@@ -3,7 +3,11 @@ package gg.fotia.chat.command;
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.announcement.Announcement;
 import gg.fotia.chat.announcement.AnnouncementManager;
+import gg.fotia.chat.condition.ConditionEvaluation;
+import gg.fotia.chat.condition.ConditionTrace;
 import gg.fotia.chat.manager.MessageManager;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -24,6 +28,7 @@ import java.util.stream.Collectors;
  * /announcement list - 列出所有公告
  * /announcement toggle - 开关自动公告
  * /announcement reload - 重载公告配置
+ * /announcement test <id> [player] - 检查玩家是否满足公告条件
  */
 public class AnnouncementCommand implements CommandExecutor, TabCompleter {
 
@@ -108,6 +113,8 @@ public class AnnouncementCommand implements CommandExecutor, TabCompleter {
                 messageManager.send(sender, "announcement.reloaded");
             }
 
+            case "test" -> testConditions(sender, args, announcementManager, messageManager);
+
             default -> sendHelp(sender);
         }
 
@@ -121,6 +128,74 @@ public class AnnouncementCommand implements CommandExecutor, TabCompleter {
         plugin.getMessageManager().send(sender, "announcement.help-list");
         plugin.getMessageManager().send(sender, "announcement.help-toggle");
         plugin.getMessageManager().send(sender, "announcement.help-reload");
+        plugin.getMessageManager().send(sender, "announcement.help-test");
+    }
+
+    private void testConditions(CommandSender sender, String[] args, AnnouncementManager manager,
+                                MessageManager messageManager) {
+        if (args.length < 2) {
+            messageManager.send(sender, "announcement.usage-test");
+            return;
+        }
+
+        Announcement announcement = manager.getAnnouncement(args[1]);
+        if (announcement == null) {
+            messageManager.send(sender, "announcement.not-found", Map.of("id", args[1]));
+            return;
+        }
+
+        Player target;
+        if (args.length >= 3) {
+            target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                messageManager.send(sender, "general.player-not-found", Map.of("player", args[2]));
+                return;
+            }
+        } else if (sender instanceof Player player) {
+            target = player;
+        } else {
+            messageManager.send(sender, "announcement.test-player-required");
+            return;
+        }
+
+        boolean permissionPassed = !announcement.hasPermission()
+                || target.hasPermission(announcement.getPermission());
+        ConditionEvaluation evaluation = manager.evaluateConditions(announcement, target);
+        boolean passed = permissionPassed && evaluation.passed();
+
+        Component header = localized(messageManager, sender, "announcement.test-header")
+                .append(Component.text(" " + announcement.getId() + " / " + target.getName() + " - "))
+                .append(localized(messageManager, sender,
+                        passed ? "announcement.test-overall-pass" : "announcement.test-overall-fail"));
+        sender.sendMessage(header);
+
+        if (announcement.hasPermission()) {
+            Component prefix = localized(messageManager, sender, permissionPassed
+                    ? "announcement.test-entry-pass"
+                    : "announcement.test-entry-fail");
+            sender.sendMessage(prefix.append(Component.text(
+                    " permission: " + announcement.getPermission())));
+        }
+
+        if (evaluation.traces().isEmpty()) {
+            sender.sendMessage(localized(messageManager, sender, "announcement.test-no-conditions"));
+            return;
+        }
+
+        for (ConditionTrace trace : evaluation.traces()) {
+            Component prefix = localized(messageManager, sender, trace.passed()
+                    ? "announcement.test-entry-pass"
+                    : "announcement.test-entry-fail");
+            String cached = trace.cached() ? " [cache]" : "";
+            sender.sendMessage(prefix.append(Component.text(" " + trace.path() + " [" + trace.type()
+                    + "] " + trace.detail() + cached)));
+        }
+    }
+
+    private Component localized(MessageManager messageManager, CommandSender sender, String key) {
+        return sender instanceof Player player
+                ? messageManager.get(key, player)
+                : messageManager.get(key);
     }
 
     @Override
@@ -131,17 +206,26 @@ public class AnnouncementCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            List<String> completions = List.of("send", "broadcast", "list", "toggle", "reload");
+            List<String> completions = List.of("send", "broadcast", "list", "toggle", "reload", "test");
             String input = args[0].toLowerCase();
             return completions.stream()
                     .filter(s -> s.startsWith(input))
                     .collect(Collectors.toList());
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("send")) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("send")
+                || args[0].equalsIgnoreCase("test"))) {
             String input = args[1].toLowerCase();
             return plugin.getAnnouncementManager().getAnnouncementIds().stream()
                     .filter(s -> s.toLowerCase().startsWith(input))
+                    .collect(Collectors.toList());
+        }
+
+        if (args.length == 3 && args[0].equalsIgnoreCase("test")) {
+            String input = args[2].toLowerCase();
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase().startsWith(input))
                     .collect(Collectors.toList());
         }
 

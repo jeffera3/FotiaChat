@@ -79,6 +79,7 @@ public class PlayerListener implements Listener {
         // 清理私聊数据
         plugin.getPrivateMessageManager().clearPlayer(uuid);
         plugin.getPrivateMessageManager().getSocialSpyManager().clearPlayer(uuid);
+        plugin.getAnnouncementManager().getConditionEngine().clearCache(uuid);
     }
 
     @EventHandler

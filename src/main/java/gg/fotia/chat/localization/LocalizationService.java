@@ -100,22 +100,29 @@ public final class LocalizationService {
         String resourcePath = "locales/" + locale + ".yml";
         File file = new File(plugin.getDataFolder(), resourcePath);
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(file);
-        Set<String> keys = new LinkedHashSet<>(configuration.getKeys(true));
+        YamlConfiguration bundled = new YamlConfiguration();
         try (InputStream stream = plugin.getResource(resourcePath)) {
             if (stream != null) {
-                YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                bundled = YamlConfiguration.loadConfiguration(
                         new InputStreamReader(stream, StandardCharsets.UTF_8));
-                configuration.setDefaults(defaults);
-                keys.addAll(defaults.getKeys(true));
             }
         } catch (Exception exception) {
             plugin.getLogger().warning("读取内置语言文件失败 " + resourcePath + ": " + exception.getMessage());
         }
 
+        return mergeCatalog(configuration, bundled);
+    }
+
+    static Map<String, String> mergeCatalog(YamlConfiguration configured, YamlConfiguration bundled) {
+        Set<String> keys = new LinkedHashSet<>(bundled.getKeys(true));
+        keys.addAll(configured.getKeys(true));
+
         Map<String, String> entries = new LinkedHashMap<>();
         for (String key : keys) {
-            if (configuration.isString(key)) {
-                entries.put(key, configuration.getString(key, key));
+            if (configured.isString(key)) {
+                entries.put(key, configured.getString(key, key));
+            } else if (bundled.isString(key)) {
+                entries.put(key, bundled.getString(key, key));
             }
         }
         return entries;

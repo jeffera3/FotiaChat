@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.List;
@@ -69,6 +71,18 @@ class LocalizationResourceTest {
                 }
             }
         }
+    }
+
+    @Test
+    void bundledKeysFillMissingEntriesInExistingLocaleFiles() throws Exception {
+        YamlConfiguration existing = new YamlConfiguration();
+        existing.loadFromString("announcement:\n  sent: old value\n");
+        YamlConfiguration bundled = YamlConfiguration.loadConfiguration(new StringReader(
+                Files.readString(Path.of("src/main/resources/locales/zh_CN.yml"), StandardCharsets.UTF_8)));
+        java.util.Map<String, String> entries = LocalizationService.mergeCatalog(existing, bundled);
+
+        assertEquals("<!i><red>控制台执行时必须指定在线玩家。",
+                entries.get("announcement.test-player-required"));
     }
 
     private Set<String> stringKeys(File file) {

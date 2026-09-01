@@ -1,6 +1,11 @@
 package gg.fotia.chat.announcement;
 
 import gg.fotia.chat.FotiaChat;
+import gg.fotia.chat.condition.ConditionContext;
+import gg.fotia.chat.condition.ConditionEngine;
+import gg.fotia.chat.condition.ConditionEvaluation;
+import gg.fotia.chat.condition.ConditionParseException;
+import gg.fotia.chat.condition.ConditionSet;
 import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -35,9 +40,13 @@ public class AnnouncementManager {
     private boolean enabled;
     private boolean random;
     private final Random randomSource = new Random();
+    private final ConditionEngine conditionEngine;
+    private final AnnouncementConditionEvaluator conditionEvaluator;
 
     public AnnouncementManager(FotiaChat plugin) {
         this.plugin = plugin;
+        this.conditionEngine = ConditionEngine.createDefault();
+        this.conditionEvaluator = new AnnouncementConditionEvaluator(conditionEngine);
     }
 
     public void load() {
@@ -47,6 +56,7 @@ public class AnnouncementManager {
         messageIndex.clear();
         messageKeys.clear();
         hoverTextKeys.clear();
+        conditionEngine.clearCache();
 
         saveDefaultConfig();
 
@@ -97,6 +107,15 @@ public class AnnouncementManager {
         float soundVolume = (float) section.getDouble("sound-volume", 1.0);
         float soundPitch = (float) section.getDouble("sound-pitch", 1.0);
 
+        ConditionSet conditions;
+        try {
+            conditions = conditionEngine.parse(section.getConfigurationSection("conditions"),
+                    "announcements." + id + ".conditions");
+        } catch (ConditionParseException exception) {
+            plugin.getLogger().warning("公告 " + id + " 的条件配置无效，已跳过该公告: " + exception.getMessage());
+            return;
+        }
+
         if (sound != null && !sound.isBlank()) {
             try {
                 Sound.valueOf(sound.toUpperCase(Locale.ROOT));
@@ -133,7 +152,7 @@ public class AnnouncementManager {
 
         Announcement announcement = new Announcement(id, permission, interval, messages,
                 announcementEnabled, sound, soundVolume, soundPitch,
-                hoverEnabled, hoverText, clickEnabled, clickAction, clickValue);
+                hoverEnabled, hoverText, clickEnabled, clickAction, clickValue, conditions);
         announcements.put(id, announcement);
     }
 
@@ -198,10 +217,12 @@ public class AnnouncementManager {
      */
     private void broadcastNext(Announcement announcement) {
         List<String> entries = getMessageEntries(announcement);
-        if (entries.isEmpty()) {
+        List<Player> recipients = eligiblePlayers(announcement);
+        if (entries.isEmpty() || recipients.isEmpty()) {
             return;
         }
-        broadcastLines(announcement, List.of(getNextMessage(announcement, entries)), usesMessageKeys(announcement));
+        broadcastLines(announcement, List.of(getNextMessage(announcement, entries)),
+                usesMessageKeys(announcement), recipients);
     }
 
     /**
@@ -209,15 +230,15 @@ public class AnnouncementManager {
      */
     public void broadcast(Announcement announcement) {
         List<String> entries = getMessageEntries(announcement);
-        if (entries.isEmpty()) {
+        List<Player> recipients = eligiblePlayers(announcement);
+        if (entries.isEmpty() || recipients.isEmpty()) {
             return;
         }
-        broadcastLines(announcement, entries, usesMessageKeys(announcement));
+        broadcastLines(announcement, entries, usesMessageKeys(announcement), recipients);
     }
 
-    private void broadcastLines(Announcement announcement, List<String> lines, boolean linesAreKeys) {
-        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-
+    private void broadcastLines(Announcement announcement, List<String> lines, boolean linesAreKeys,
+                                Collection<? extends Player> players) {
         Sound sound = null;
         if (announcement.hasSound()) {
             try {
@@ -228,9 +249,6 @@ public class AnnouncementManager {
         }
 
         for (Player player : players) {
-            if (announcement.hasPermission() && !player.hasPermission(announcement.getPermission())) {
-                continue;
-            }
             for (String line : lines) {
                 player.sendMessage(buildAnnouncementComponent(announcement, line, linesAreKeys, player));
             }
@@ -239,6 +257,29 @@ public class AnnouncementManager {
                         announcement.getSoundVolume(), announcement.getSoundPitch());
             }
         }
+    }
+
+    private List<Player> eligiblePlayers(Announcement announcement) {
+        List<Player> recipients = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (announcement.hasPermission() && !player.hasPermission(announcement.getPermission())) {
+                continue;
+            }
+            if (evaluateConditions(announcement, player).passed()) {
+                recipients.add(player);
+            }
+        }
+        return recipients;
+    }
+
+    public ConditionEvaluation evaluateConditions(Announcement announcement, Player player) {
+        ConditionContext context = new ConditionContext(player.getUniqueId(), player,
+                input -> plugin.getChatFormatter().getPlaceholderHandler().setPlaceholders(player, input));
+        return conditionEvaluator.evaluate(announcement, context);
+    }
+
+    public ConditionEngine getConditionEngine() {
+        return conditionEngine;
     }
 
     /**
