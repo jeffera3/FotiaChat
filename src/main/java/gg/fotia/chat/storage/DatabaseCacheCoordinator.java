@@ -9,6 +9,19 @@ public final class DatabaseCacheCoordinator {
 
     private final Object orderingLock = new Object();
 
+    public void persistThenMutate(Runnable enqueueWrite, Runnable cacheMutation) {
+        synchronized (orderingLock) {
+            enqueueWrite.run();
+            cacheMutation.run();
+        }
+    }
+
+    public <T> T ordered(Supplier<T> action) {
+        synchronized (orderingLock) {
+            return action.get();
+        }
+    }
+
     public void mutate(Runnable cacheMutation, Runnable enqueueWrite) {
         synchronized (orderingLock) {
             cacheMutation.run();

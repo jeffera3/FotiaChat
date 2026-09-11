@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[Ayuda]</green> <gray>¿Necesitas ayuda? ¡Haga clic aquí!</gray>"
     hover-title: "<!i><green>Obtener ayuda</green>"
     hover-action: "<!i><gray>Haga clic para ingresar el comando de ayuda.</gray>"
+
+storage:
+  busy: "<!i><red>El almacenamiento está ocupado. Inténtalo de nuevo más tarde.</red>"
+  load-failed: "<!i><red>No se pudieron cargar tus ajustes de chat. Vuelve a conectarte más tarde.</red>"

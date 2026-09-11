@@ -145,7 +145,7 @@ public class CrossServerManager {
             if ((permission == null || permission.isEmpty() || player.hasPermission(permission))
                     && (senderUuid == null || !plugin.getIgnoreManager().isIgnoring(player.getUniqueId(), senderUuid))) {
                 if (message.getSenderName() == null || message.getSenderName().isEmpty()) {
-                    player.sendMessage(MessageUtil.parse(message.getMessage()));
+                    player.sendMessage(CrossServerChatCodec.decode(message.getMessage()));
                 } else {
                     player.sendMessage(buildLocalizedChatMessage(player, channel, message));
                 }
@@ -162,7 +162,7 @@ public class CrossServerManager {
                 .replace("{player}", escapeMiniMessage(message.getSenderName()))
                 .replace("{message}", CROSS_SERVER_MESSAGE_MARKER);
         Component trustedFormat = MessageUtil.parse(format, viewer);
-        Component untrustedMessage = MessageUtil.parse(message.getMessage());
+        Component untrustedMessage = CrossServerChatCodec.decode(message.getMessage());
         return trustedFormat.replaceText(builder -> builder
                 .matchLiteral(CROSS_SERVER_MESSAGE_MARKER)
                 .replacement(untrustedMessage));
@@ -221,7 +221,7 @@ public class CrossServerManager {
                 senderUuid,
                 "",
                 channel.getId(),
-                formattedMessage
+                CrossServerChatCodec.encode(MessageUtil.parse(formattedMessage))
         ));
     }
 
@@ -230,9 +230,14 @@ public class CrossServerManager {
      * 不能让远端把玩家输入直接当 MiniMessage 解析。
      */
     public void sendChatMessage(Player player, Channel channel, String message) {
+        sendPreparedChatMessage(player, channel, Component.text(message == null ? "" : message));
+    }
+
+    /** 发送经过聊天管线处理的组件，保留颜色与字体并移除仅本服可用的快照链接。 */
+    public void sendPreparedChatMessage(Player player, Channel channel, Component message) {
         if (!enabled || player == null || channel == null || !channel.isCrossServerEnabled()) return;
 
-        String safeMessage = escapeMiniMessage(message == null ? "" : message);
+        String safeMessage = CrossServerChatCodec.encode(message);
         sendMessage(new CrossServerMessage(
                 CrossServerMessage.TYPE_CHAT,
                 serverName,

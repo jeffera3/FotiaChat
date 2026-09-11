@@ -20,6 +20,9 @@ storage:
   # 存储类型: memory(内存) 或 mysql(数据库)
   # 使用mysql可以跨服同步玩家的频道和颜色设置
   type: memory
+  # 数据库最多等待执行的任务数；满队列时拒绝新操作并提示，不阻塞主线程
+  # 修改后重启生效
+  task-queue-capacity: 4096
   # MySQL配置 (当type为mysql时使用)
   mysql:
     host: localhost
@@ -79,3 +82,10 @@ cross-server:
     port: 6379
     password: ''
     channel: fotiachat:messages
+    # 连接/读写超时（毫秒）及断线重连间隔；网络操作均在后台执行
+    timeout-millis: 2000
+    reconnect-delay-millis: 5000
+    # 最多等待发布的消息数；满队列时拒绝新消息并限频告警
+    publish-queue-capacity: 1024
+    # 消息在队列中的最大等待时间（秒），防止重连后发送过时消息
+    message-max-age-seconds: 60

@@ -2,6 +2,7 @@ package gg.fotia.chat.itemdisplay;
 
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.util.ComponentTextTransformer;
+import gg.fotia.chat.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -298,12 +299,12 @@ public class ItemDisplayManager {
      */
     private Component processHandItem(Player player) {
         if (!player.hasPermission(handItemPermission)) {
-            return miniMessage.deserialize(localized(player, handItemEmptyHandKey, handItemEmptyHand));
+            return MessageUtil.parseConfigured(localized(player, handItemEmptyHandKey, handItemEmptyHand));
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item.getType() == Material.AIR) {
-            return miniMessage.deserialize(localized(player, handItemEmptyHandKey, handItemEmptyHand));
+            return MessageUtil.parseConfigured(localized(player, handItemEmptyHandKey, handItemEmptyHand));
         }
 
         if (handItemDisplayMode == HandItemDisplayMode.GUI) {
@@ -345,7 +346,7 @@ public class ItemDisplayManager {
                 .replace("{amount}", String.valueOf(item.getAmount()))
                 .replace("{item_name}", "<item_name>");
 
-        return miniMessage.deserialize(
+        return MessageUtil.parseConfigured(
                 processed,
                 net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component(
                         "item_name",
@@ -373,7 +374,7 @@ public class ItemDisplayManager {
         int itemCount = countItems(snapshot.contents());
 
         String format = localized(player, inventoryFormatKey, inventoryFormat);
-        Component component = miniMessage.deserialize(format);
+        Component component = MessageUtil.parseConfigured(format);
 
         // 娣诲姞鎮诞鏂囨湰
         List<String> hoverLines = localizedList(player, inventoryHoverKeys, inventoryHover);
@@ -401,7 +402,7 @@ public class ItemDisplayManager {
         int itemCount = countItems(snapshot.contents());
 
         String format = localized(player, enderchestFormatKey, enderchestFormat);
-        Component component = miniMessage.deserialize(format);
+        Component component = MessageUtil.parseConfigured(format);
 
         // 娣诲姞鎮诞鏂囨湰
         List<String> hoverLines = localizedList(player, enderchestHoverKeys, enderchestHover);
@@ -460,7 +461,7 @@ public class ItemDisplayManager {
                     .replace("{item_name}", "<item_name>"); // 杞崲涓?MiniMessage 鏍煎紡
 
             if (!processed.trim().isEmpty()) {
-                Component lineComponent = miniMessage.deserialize(processed,
+                Component lineComponent = MessageUtil.parseConfigured(processed,
                         net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("item_name", itemNameComponent));
                 lines.add(lineComponent);
             }
@@ -486,7 +487,7 @@ public class ItemDisplayManager {
             String processed = line
                     .replace("{player}", playerName)
                     .replace("{item_count}", String.valueOf(itemCount));
-            lines.add(miniMessage.deserialize(processed));
+            lines.add(MessageUtil.parseConfigured(processed));
         }
 
         Component result = Component.empty();
@@ -863,13 +864,13 @@ public class ItemDisplayManager {
      */
     private String getHandItemTextForCrossServer(Player player) {
         if (!player.hasPermission(handItemPermission)) {
-            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(
+            return PlainTextComponentSerializer.plainText().serialize(MessageUtil.parseConfigured(
                     localized(player, handItemEmptyHandKey, handItemEmptyHand)));
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item.getType() == Material.AIR) {
-            return PlainTextComponentSerializer.plainText().serialize(miniMessage.deserialize(
+            return PlainTextComponentSerializer.plainText().serialize(MessageUtil.parseConfigured(
                     localized(player, handItemEmptyHandKey, handItemEmptyHand)));
         }
 

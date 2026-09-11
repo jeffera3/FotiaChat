@@ -241,16 +241,15 @@ public class ChannelManager {
     }
 
     public void setPlayerChannel(Player player, String channelId) {
-        playerChannels.put(player.getUniqueId(), channelId.toLowerCase());
-
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
             plugin.getDatabaseManager().updatePlayerChannel(player.getUniqueId(), player.getName(), channelId.toLowerCase());
         }
+        playerChannels.put(player.getUniqueId(), channelId.toLowerCase());
     }
 
     public void loadPlayerChannel(Player player, String channelId) {
         if (channelId != null && channels.containsKey(channelId.toLowerCase())) {
-            playerChannels.put(player.getUniqueId(), channelId.toLowerCase());
+            playerChannels.putIfAbsent(player.getUniqueId(), channelId.toLowerCase());
         }
     }
 

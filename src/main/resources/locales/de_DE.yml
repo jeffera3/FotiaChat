@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[Hilfe]</green> <gray>Brauchen Sie Hilfe? Klicken Sie hier!</gray>"
     hover-title: "<!i><green>Holen Sie sich Hilfe</green>"
     hover-action: "<!i><gray>Klicken Sie, um den Hilfebefehl einzugeben</gray>"
+
+storage:
+  busy: "<!i><red>Der Speicher ist ausgelastet. Bitte versuche es später erneut.</red>"
+  load-failed: "<!i><red>Deine Chateinstellungen konnten nicht geladen werden. Bitte verbinde dich später erneut.</red>"

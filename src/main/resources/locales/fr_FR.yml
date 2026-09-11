@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[Aide]</green> <gray>Besoin d'aide ? Cliquez ici!</gray>"
     hover-title: "<!i><green>Obtenir de l'aide</green>"
     hover-action: "<!i><gray>Cliquez pour entrer la commande d'aide</gray>"
+
+storage:
+  busy: "<!i><red>Le stockage est occupé. Réessaie dans un instant.</red>"
+  load-failed: "<!i><red>Tes paramètres de discussion sont indisponibles. Reconnecte-toi plus tard.</red>"

@@ -23,6 +23,7 @@ public class DatabaseManager {
     public static final String CACHE_IGNORES = "ignores";
 
     private final FotiaChat plugin;
+    private final PlayerDataRepository playerData;
     private volatile HikariDataSource dataSource;
     private volatile DatabaseTaskQueue databaseTaskQueue;
     private volatile boolean enabled = false;
@@ -30,6 +31,7 @@ public class DatabaseManager {
 
     public DatabaseManager(FotiaChat plugin) {
         this.plugin = plugin;
+        this.playerData = new PlayerDataRepository(this, plugin.getLogger());
     }
 
     /**
@@ -77,7 +79,8 @@ public class DatabaseManager {
             hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
             dataSource = new HikariDataSource(hikariConfig);
-            databaseTaskQueue = new DatabaseTaskQueue("FotiaChat-Database");
+            databaseTaskQueue = new DatabaseTaskQueue("FotiaChat-Database",
+                    config.getInt("task-queue-capacity", 4096), plugin.getLogger()::warning);
             enabled = true;
 
             // 创建表
@@ -195,114 +198,28 @@ public class DatabaseManager {
         return dataSource.getConnection();
     }
 
-    /**
-     * 保存玩家数据
-     */
     public void savePlayerData(UUID uuid, String username, String channelId, String colorId) {
-        if (!enabled) return;
-
-        String sql = """
-            INSERT INTO fotiachat_players (uuid, username, channel_id, color_id)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                username = VALUES(username),
-                channel_id = VALUES(channel_id),
-                color_id = VALUES(color_id)
-            """;
-
-        submitAsync(() -> {
-            try (Connection conn = getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, uuid.toString());
-                stmt.setString(2, username);
-                stmt.setString(3, channelId);
-                stmt.setString(4, colorId);
-                stmt.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("保存玩家数据失败: " + e.getMessage());
-            }
-        });
+        playerData.savePlayerData(uuid, username, channelId, colorId);
     }
 
-    /**
-     * 加载玩家数据
-     */
     public PlayerData loadPlayerData(UUID uuid) {
-        if (!enabled) return null;
-
-        String sql = "SELECT channel_id, color_id FROM fotiachat_players WHERE uuid = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, uuid.toString());
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return new PlayerData(
-                            uuid,
-                            rs.getString("channel_id"),
-                            rs.getString("color_id")
-                    );
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().warning("加载玩家数据失败: " + e.getMessage());
-        }
-
-        return null;
+        return playerData.loadPlayerData(uuid);
     }
 
-    /**
-     * 更新玩家频道（upsert，玩家行缺失时自动补建，避免更新被静默丢弃）
-     */
+    public PlayerDataLoadResult loadPlayerDataResult(UUID uuid) {
+        return playerData.load(uuid);
+    }
+
+    public PlayerDataLoadResult initializePlayerData(UUID uuid, String username, String defaultChannel) {
+        return playerData.initialize(uuid, username, defaultChannel);
+    }
+
     public void updatePlayerChannel(UUID uuid, String username, String channelId) {
-        if (!enabled) return;
-
-        String sql = """
-            INSERT INTO fotiachat_players (uuid, username, channel_id)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                username = VALUES(username),
-                channel_id = VALUES(channel_id)
-            """;
-
-        submitAsync(() -> {
-            try (Connection conn = getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, uuid.toString());
-                stmt.setString(2, username);
-                stmt.setString(3, channelId);
-                stmt.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("更新玩家频道失败: " + e.getMessage());
-            }
-        });
+        playerData.updatePlayerChannel(uuid, username, channelId);
     }
 
-    /**
-     * 更新玩家颜色（upsert，玩家行缺失时自动补建）
-     */
     public void updatePlayerColor(UUID uuid, String username, String colorId) {
-        if (!enabled) return;
-
-        String sql = """
-            INSERT INTO fotiachat_players (uuid, username, color_id)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                username = VALUES(username),
-                color_id = VALUES(color_id)
-            """;
-
-        submitAsync(() -> {
-            try (Connection conn = getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, uuid.toString());
-                stmt.setString(2, username);
-                stmt.setString(3, colorId);
-                stmt.executeUpdate();
-            } catch (SQLException e) {
-                plugin.getLogger().warning("更新玩家颜色失败: " + e.getMessage());
-            }
-        });
+        playerData.updatePlayerColor(uuid, username, colorId);
     }
 
     /**
@@ -332,11 +249,16 @@ public class DatabaseManager {
         if (!enabled || closing || taskQueue == null) {
             return false;
         }
-        if (!taskQueue.submit(task)) {
-            plugin.getLogger().warning("数据库任务被拒绝: 任务队列已关闭");
-            return false;
-        }
-        return true;
+        return taskQueue.submit(task);
+    }
+
+    void enqueueWrite(Runnable task) {
+        if (!submitAsync(task)) throw new DatabaseWriteRejectedException();
+    }
+
+    public int getPendingTaskCount() {
+        DatabaseTaskQueue queue = databaseTaskQueue;
+        return queue == null ? 0 : queue.pendingCount();
     }
 
     /**
@@ -372,7 +294,7 @@ public class DatabaseManager {
                 muted_by = VALUES(muted_by)
             """;
 
-        submitAsync(() -> {
+        enqueueWrite(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
@@ -397,7 +319,7 @@ public class DatabaseManager {
 
         String sql = "DELETE FROM fotiachat_mutes WHERE uuid = ?";
 
-        submitAsync(() -> {
+        enqueueWrite(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, uuid.toString());
@@ -486,7 +408,7 @@ public class DatabaseManager {
             VALUES (?, ?, ?)
             """;
 
-        submitAsync(() -> {
+        enqueueWrite(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, playerUuid.toString());
@@ -509,7 +431,7 @@ public class DatabaseManager {
 
         String sql = "DELETE FROM fotiachat_ignores WHERE player_uuid = ? AND ignored_uuid = ?";
 
-        submitAsync(() -> {
+        enqueueWrite(() -> {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, playerUuid.toString());

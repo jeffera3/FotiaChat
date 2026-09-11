@@ -112,12 +112,11 @@ public class ColorManager {
         if (!color.hasPermission(player)) {
             return false;
         }
-        playerColors.put(player.getUniqueId(), colorId);
-
         // 保存到数据库
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
             plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), player.getName(), colorId);
         }
+        playerColors.put(player.getUniqueId(), colorId);
 
         return true;
     }
@@ -126,12 +125,12 @@ public class ColorManager {
      * 重置玩家的聊天颜色为默认
      */
     public void resetPlayerColor(Player player) {
-        playerColors.remove(player.getUniqueId());
-
         // 保存到数据库
         if (plugin.getDatabaseManager() != null && plugin.getDatabaseManager().isEnabled()) {
             plugin.getDatabaseManager().updatePlayerColor(player.getUniqueId(), player.getName(), null);
         }
+        // 保留本次会话的显式重置，迟到的登录读取不能覆盖它。
+        playerColors.put(player.getUniqueId(), "");
     }
 
     /**
@@ -191,7 +190,7 @@ public class ColorManager {
      */
     public void loadPlayerColor(Player player, String colorId) {
         if (colorId != null && colors.containsKey(colorId)) {
-            playerColors.put(player.getUniqueId(), colorId);
+            playerColors.putIfAbsent(player.getUniqueId(), colorId);
         }
     }
 

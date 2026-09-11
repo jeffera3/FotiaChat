@@ -242,9 +242,9 @@ public class MuteManager {
 
         DatabaseManager dbManager = plugin.getDatabaseManager();
         if (dbManager != null && dbManager.isEnabled()) {
-            databaseCoordinator.mutate(
-                    () -> cache.put(data),
-                    () -> dbManager.saveMute(uuid, playerName, muteTime, expireTime, reason, mutedBy)
+            databaseCoordinator.persistThenMutate(
+                    () -> dbManager.saveMute(uuid, playerName, muteTime, expireTime, reason, mutedBy),
+                    () -> cache.put(data)
             );
         } else {
             cache.put(data);
@@ -255,15 +255,11 @@ public class MuteManager {
     public boolean unmute(UUID uuid) {
         DatabaseManager dbManager = plugin.getDatabaseManager();
         if (dbManager != null && dbManager.isEnabled()) {
-            MuteData removed = databaseCoordinator.mutate(
-                    () -> cache.remove(uuid),
-                    result -> {
-                        if (result != null) {
-                            dbManager.deleteMute(uuid);
-                        }
-                    }
-            );
-            return removed != null;
+            return databaseCoordinator.ordered(() -> {
+                if (cache.get(uuid) == null) return false;
+                dbManager.deleteMute(uuid);
+                return cache.remove(uuid) != null;
+            });
         }
 
         MuteData removed = cache.remove(uuid);
@@ -300,7 +296,11 @@ public class MuteManager {
                     () -> cache.removeExpired(uuid, now),
                     removed -> {
                         if (removed) {
-                            dbManager.deleteMute(uuid);
+                            try {
+                                dbManager.deleteMute(uuid);
+                            } catch (gg.fotia.chat.storage.DatabaseWriteRejectedException exception) {
+                                // 过期记录已失效，数据库清理可延后；队列负责限频记录积压告警。
+                            }
                         }
                     }
             );

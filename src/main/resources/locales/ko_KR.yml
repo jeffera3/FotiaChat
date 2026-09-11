@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[도움말]</green> <gray>도움이 필요하신가요? 여기를 클릭하세요!</gray>"
     hover-title: "<!i><green>도움 받기</green>"
     hover-action: "<!i><gray>도움말 명령을 입력하려면 클릭하세요.</gray>"
+
+storage:
+  busy: "<!i><red>저장 작업이 혼잡합니다. 잠시 후 다시 시도해 주세요.</red>"
+  load-failed: "<!i><red>채팅 설정을 불러오지 못했습니다. 나중에 다시 접속해 주세요.</red>"

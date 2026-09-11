@@ -37,6 +37,10 @@ public class MentionManager {
     }
 
     public Result apply(Player sender, Component message, Collection<? extends Player> onlinePlayers, Player viewer) {
+        return render(sender, prepare(sender, message, onlinePlayers), viewer);
+    }
+
+    public MentionPlan prepare(Player sender, Component message, Collection<? extends Player> onlinePlayers) {
         ConfigManager config = plugin.getConfigManager();
         Component safeMessage = message == null ? Component.empty() : message;
         boolean hasPermission = sender != null && sender.hasPermission(USE_PERMISSION);
@@ -49,7 +53,7 @@ public class MentionManager {
                     + ", message=" + plainText.serialize(safeMessage));
         }
         if (!config.isMentionEnabled() || sender == null || !hasPermission || onlinePlayerCount == 0) {
-            return new Result(safeMessage, Set.of());
+            return new MentionPlan(safeMessage, List.of(), Set.of());
         }
 
         Map<String, Player> playersByName = new LinkedHashMap<>();
@@ -67,17 +71,18 @@ public class MentionManager {
                     .map(Player::getName)
                     .toList() + ", matches=" + matches);
         }
-        MentionComponentDecorator.Result decorated = MentionComponentDecorator.decorate(
-                safeMessage,
-                matches,
-                playerName -> createMentionComponent(sender, playerName, viewer)
-        );
-        Set<UUID> mentionedPlayers = decorated.mentionedPlayerNames().stream()
+        Set<UUID> mentionedPlayers = matches.stream().map(MentionMatcher.Match::playerName)
                 .map(name -> playersByName.get(name.toLowerCase(Locale.ROOT)))
                 .filter(player -> player != null)
                 .map(Player::getUniqueId)
                 .collect(Collectors.toUnmodifiableSet());
-        return new Result(decorated.component(), mentionedPlayers);
+        return new MentionPlan(safeMessage, matches, mentionedPlayers);
+    }
+
+    public Result render(Player sender, MentionPlan plan, Player viewer) {
+        MentionComponentDecorator.Result decorated = MentionComponentDecorator.decorate(
+                plan.message(), plan.matches(), name -> createMentionComponent(sender, name, viewer));
+        return new Result(decorated.component(), plan.mentionedPlayers());
     }
 
     public void notify(Player player) {

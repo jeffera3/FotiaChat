@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[ヘルプ]</green> <gray>助けが必要ですか?ここをクリック！</gray>"
     hover-title: "<!i><green>助けてもらう</green>"
     hover-action: "<!i><gray>クリックしてヘルプ コマンドを入力します</gray>"
+
+storage:
+  busy: "<!i><red>保存処理が混み合っています。しばらくしてから再試行してください。</red>"
+  load-failed: "<!i><red>チャット設定を読み込めませんでした。後ほど再接続してください。</red>"

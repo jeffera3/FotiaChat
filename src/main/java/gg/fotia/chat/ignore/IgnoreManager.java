@@ -210,9 +210,9 @@ public class IgnoreManager {
     public void addIgnore(UUID playerUuid, UUID ignoredUuid, String ignoredName) {
         DatabaseManager dbManager = plugin.getDatabaseManager();
         if (dbManager != null && dbManager.isEnabled()) {
-            databaseCoordinator.mutate(
-                    () -> cache.add(playerUuid, ignoredUuid, ignoredName),
-                    () -> dbManager.addIgnore(playerUuid, ignoredUuid, ignoredName)
+            databaseCoordinator.persistThenMutate(
+                    () -> dbManager.addIgnore(playerUuid, ignoredUuid, ignoredName),
+                    () -> cache.add(playerUuid, ignoredUuid, ignoredName)
             );
         } else {
             cache.add(playerUuid, ignoredUuid, ignoredName);
@@ -223,9 +223,9 @@ public class IgnoreManager {
     public void removeIgnore(UUID playerUuid, UUID ignoredUuid) {
         DatabaseManager dbManager = plugin.getDatabaseManager();
         if (dbManager != null && dbManager.isEnabled()) {
-            databaseCoordinator.mutate(
-                    () -> cache.remove(playerUuid, ignoredUuid),
-                    () -> dbManager.removeIgnore(playerUuid, ignoredUuid)
+            databaseCoordinator.persistThenMutate(
+                    () -> dbManager.removeIgnore(playerUuid, ignoredUuid),
+                    () -> cache.remove(playerUuid, ignoredUuid)
             );
         } else {
             cache.remove(playerUuid, ignoredUuid);

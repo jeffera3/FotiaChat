@@ -8,6 +8,7 @@ import gg.fotia.chat.format.ChatFormatter;
 import gg.fotia.chat.format.CraftEngineHandler;
 import gg.fotia.chat.ignore.IgnoreManager;
 import gg.fotia.chat.mention.MentionManager;
+import gg.fotia.chat.mention.MentionPlan;
 import gg.fotia.chat.util.LegacyColorConverter;
 import gg.fotia.chat.util.ComponentTextTransformer;
 import io.papermc.paper.event.player.AsyncChatDecorateEvent;
@@ -22,6 +23,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -143,13 +147,11 @@ public class ChatListener implements Listener {
         final String observedMessage = message;
         final boolean preserveIncomingComponent = shouldPreserveIncomingComponent(workingMessageComponent);
 
-        final String finalMessage;
         final Component preparedMessage;
         final Component defaultFormattedMessage;
 
         ChatColor chatColor = plugin.getColorManager().getPlayerColor(player);
         if (preserveIncomingComponent) {
-            finalMessage = message;
             preparedMessage = chatFormatter.prepareMessage(player, workingMessageComponent, chatColor);
         } else {
             boolean allowInlineColors = plugin.getConfigManager().isAllowColorCodes()
@@ -160,13 +162,14 @@ public class ChatListener implements Listener {
             if (allowInlineColors) {
                 message = LegacyColorConverter.convertToMiniMessage(message);
             }
-            finalMessage = message;
-            preparedMessage = chatFormatter.prepareMessage(player, finalMessage, chatColor);
+            preparedMessage = chatFormatter.prepareMessage(player, message, chatColor);
         }
         if (plugin.interceptRoutedChat(player, finalChannel, observedMessage, preparedMessage)) {
             return;
         }
-        MentionManager.Result mentionResult = mentionManager.apply(player, preparedMessage, Bukkit.getOnlinePlayers());
+        List<Player> onlinePlayers = List.copyOf(Bukkit.getOnlinePlayers());
+        MentionPlan mentions = mentionManager.prepare(player, preparedMessage, onlinePlayers);
+        MentionManager.Result mentionResult = mentionManager.render(player, mentions, null);
         defaultFormattedMessage = chatFormatter.formatPreparedMessage(
                 player,
                 finalChannel,
@@ -178,24 +181,19 @@ public class ChatListener implements Listener {
         if (channel.isLocalChannel()) {
             recipients = getLocalRecipients(player, channel.getRadius());
         } else {
-            recipients = new HashSet<>(Bukkit.getOnlinePlayers());
+            recipients = new HashSet<>(onlinePlayers);
         }
 
+        // 同一条消息的发送者上下文相同，仅按接收者语言渲染一次。
+        Map<String, Component> localizedMessages = new HashMap<>();
+        localizedMessages.put(plugin.getMessageManager().getLocale(null), defaultFormattedMessage);
         for (Player recipient : recipients) {
             if (channelManager.hasChannelPermission(recipient, finalChannel)
                     && !ignoreManager.isIgnoring(recipient.getUniqueId(), player.getUniqueId())) {
-                MentionManager.Result localizedMentions = mentionManager.apply(
-                        player,
-                        preparedMessage,
-                        Bukkit.getOnlinePlayers(),
-                        recipient
-                );
-                Component localizedMessage = chatFormatter.formatPreparedMessage(
-                        player,
-                        finalChannel,
-                        localizedMentions.component(),
-                        recipient
-                );
+                String locale = plugin.getMessageManager().getLocale(recipient);
+                Component localizedMessage = localizedMessages.computeIfAbsent(locale, ignored ->
+                        chatFormatter.formatPreparedMessage(player, finalChannel,
+                                mentionManager.render(player, mentions, recipient).component(), recipient));
                 recipient.sendMessage(localizedMessage);
                 if (mentionResult.mentionedPlayers().contains(recipient.getUniqueId())) {
                     mentionManager.notify(recipient);
@@ -208,11 +206,7 @@ public class ChatListener implements Listener {
 
         // 本地/范围频道不参与跨服转发，避免"附近聊天"泄漏到其他服务器
         if (plugin.getCrossServerManager().isEnabled() && finalChannel.isCrossServerEnabled()) {
-            String crossServerMessage = preserveIncomingComponent ? PLAIN_TEXT.serialize(workingMessageComponent) : finalMessage;
-            if (plugin.getItemDisplayManager() != null && plugin.getItemDisplayManager().containsPlaceholder(finalMessage)) {
-                crossServerMessage = plugin.getItemDisplayManager().processMessageForCrossServer(player, finalMessage);
-            }
-            plugin.getCrossServerManager().sendChatMessage(player, finalChannel, crossServerMessage);
+            plugin.getCrossServerManager().sendPreparedChatMessage(player, finalChannel, preparedMessage);
         }
     }
 

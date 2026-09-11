@@ -306,3 +306,7 @@ configured-announcements:
     message: "<!i><green>[帮助]</green> <gray>需要帮助? 点击这里!</gray>"
     hover-title: "<!i><green>获取帮助</green>"
     hover-action: "<!i><gray>点击输入帮助命令</gray>"
+
+storage:
+  busy: "<!i><red>存储繁忙，请稍后重试。</red>"
+  load-failed: "<!i><red>暂时无法读取你的聊天设置，请稍后重新连接。</red>"

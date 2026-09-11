@@ -2,6 +2,7 @@ package gg.fotia.chat.listener;
 
 import gg.fotia.chat.FotiaChat;
 import gg.fotia.chat.storage.DatabaseManager;
+import gg.fotia.chat.storage.PlayerDataLoadResult;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -34,39 +35,24 @@ public class PlayerListener implements Listener {
             // 在事件线程先取好默认频道，避免异步窗口撞上 reload 导致 NPE
             gg.fotia.chat.channel.Channel defaultChannel = plugin.getChannelManager().getDefaultChannel();
             String defaultChannelId = defaultChannel != null ? defaultChannel.getId() : "global";
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                DatabaseManager.PlayerData data = dbManager.loadPlayerData(player.getUniqueId());
-                if (data != null) {
-                    // 老玩家：同步刷新用户名与 last_seen（玩家可能已改名）
-                    dbManager.savePlayerData(
-                            player.getUniqueId(),
-                            player.getName(),
-                            data.channelId() != null ? data.channelId() : defaultChannelId,
-                            data.colorId()
-                    );
-                    // 在主线程应用数据
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        if (player.isOnline()) {
-                            // 加载频道
-                            if (data.channelId() != null) {
-                                plugin.getChannelManager().loadPlayerChannel(player, data.channelId());
-                            }
-                            // 加载颜色
-                            if (data.colorId() != null) {
-                                plugin.getColorManager().loadPlayerColor(player, data.colorId());
-                            }
-                        }
-                    });
-                } else {
-                    // 新玩家，创建数据库记录
-                    dbManager.savePlayerData(
-                            player.getUniqueId(),
-                            player.getName(),
-                            defaultChannelId,
-                            null
-                    );
-                }
+            java.util.UUID uuid = player.getUniqueId();
+            String username = player.getName();
+            // 登录读取与设置写入使用同一队列，避免越过尚未完成的写操作。
+            boolean accepted = dbManager.submitTask(() -> {
+                PlayerDataLoadResult result = dbManager.initializePlayerData(uuid, username, defaultChannelId);
+                if (!plugin.isEnabled()) return;
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    if (!player.isOnline()) return;
+                    if (!result.successful()) {
+                        plugin.getMessageManager().send(player, "storage.load-failed");
+                        return;
+                    }
+                    DatabaseManager.PlayerData data = result.data();
+                    plugin.getChannelManager().loadPlayerChannel(player, data.channelId());
+                    plugin.getColorManager().loadPlayerColor(player, data.colorId());
+                });
             });
+            if (!accepted) plugin.getMessageManager().send(player, "storage.busy");
         }
     }
 

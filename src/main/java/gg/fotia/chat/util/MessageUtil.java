@@ -4,6 +4,7 @@ import gg.fotia.chat.FotiaChat;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -21,6 +22,12 @@ public class MessageUtil {
             return Component.empty();
         }
         return MINI_MESSAGE.deserialize(LegacyColorConverter.convertToMiniMessage(message));
+    }
+
+    /** 解析可信配置文本，并保留物品名称等组件占位符。 */
+    public static Component parseConfigured(String message, TagResolver... resolvers) {
+        return MINI_MESSAGE.deserialize(LegacyColorConverter.convertToMiniMessage(
+                message == null ? "" : message), resolvers);
     }
 
     /**

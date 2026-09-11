@@ -100,7 +100,12 @@ public class MenuManager {
      */
     public void executeActions(Player player, List<String> actions) {
         for (String action : actions) {
-            executeAction(player, action);
+            try {
+                executeAction(player, action);
+            } catch (gg.fotia.chat.storage.DatabaseWriteRejectedException exception) {
+                plugin.getMessageManager().send(player, "storage.busy");
+                return;
+            }
         }
     }
 

@@ -191,6 +191,11 @@ public class FotiaChat extends JavaPlugin {
         getCommand("chatignore").setExecutor(chatIgnoreCommand);
         getCommand("chatignore").setTabCompleter(chatIgnoreCommand);
 
+        for (String name : List.of("channel", "chatcolor", "mute", "unmute", "chatignore")) {
+            org.bukkit.command.PluginCommand command = getCommand(name);
+            command.setExecutor(new StorageAwareCommandExecutor(this, command.getExecutor()));
+        }
+
         // 初始化Addon管理器（在命令注册之后，这样Addon可以覆盖占位命令）
         this.addonManager = new AddonManager(this);
         this.addonManager.loadAddons();

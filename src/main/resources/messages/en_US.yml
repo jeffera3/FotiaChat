@@ -121,3 +121,7 @@ ignore:
   list-header: "<!i><gray>========== Ignored Players =========="
   list-item: "<!i><gray>- <white>{player}</white>"
   list-empty: "<!i><yellow>You are not ignoring any players!"
+
+storage:
+  busy: "<!i><red>Storage is busy. Please try again shortly.</red>"
+  load-failed: "<!i><red>Your chat settings could not be loaded. Please reconnect later.</red>"
