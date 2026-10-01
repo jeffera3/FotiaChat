@@ -316,7 +316,7 @@ public class ChatFormatter {
 
         if (channel.isClickEnabled() && !channel.getClickValue().isEmpty()) {
             String clickValue = resolvePlainText(channel.getClickValue(), sender, channel, "");
-            ClickEvent<?> clickEvent = createClickEvent(channel.getClickAction(), clickValue);
+            ClickEvent clickEvent = createClickEvent(channel.getClickAction(), clickValue);
             prefixComponent = prefixComponent.clickEvent(clickEvent);
         }
 
@@ -327,7 +327,7 @@ public class ChatFormatter {
      * 把配置里的字符串动作名转换成 Adventure 的 ClickEvent。
      * 不依赖 ClickEvent.Action 的任何静态字段，兼容 Adventure 4.x / 5.x。
      */
-    private static ClickEvent<?> createClickEvent(String action, String value) {
+    private static ClickEvent createClickEvent(String action, String value) {
         if (action == null || action.isBlank()) {
             return ClickEvent.suggestCommand(value);
         }
