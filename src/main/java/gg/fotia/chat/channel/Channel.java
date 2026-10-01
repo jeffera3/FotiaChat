@@ -1,7 +1,5 @@
 package gg.fotia.chat.channel;
 
-import net.kyori.adventure.text.event.ClickEvent;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +25,7 @@ public class Channel {
     private final List<String> hoverText;
 
     private final boolean clickEnabled;
-    private final ClickEvent.Action clickAction;
+    private final String clickAction;
     private final String clickValue;
     private final Map<String, ChannelSegmentConfig> segmentConfigs;
 
@@ -35,7 +33,7 @@ public class Channel {
                    String permission, String shortcut, int radius, boolean isDefault,
                    boolean crossServer,
                    boolean hoverEnabled, List<String> hoverText,
-                   boolean clickEnabled, ClickEvent.Action clickAction, String clickValue,
+                   boolean clickEnabled, String clickAction, String clickValue,
                    Map<String, ChannelSegmentConfig> segmentConfigs) {
         this.id = id;
         this.name = name;
@@ -49,7 +47,7 @@ public class Channel {
         this.hoverEnabled = hoverEnabled;
         this.hoverText = hoverText == null ? List.of() : List.copyOf(hoverText);
         this.clickEnabled = clickEnabled;
-        this.clickAction = clickAction == null ? ClickEvent.Action.SUGGEST_COMMAND : clickAction;
+        this.clickAction = clickAction == null ? "suggest_command" : clickAction;
         this.clickValue = clickValue == null ? "" : clickValue;
         this.segmentConfigs = normalizeSegmentConfigs(segmentConfigs);
     }
@@ -57,7 +55,7 @@ public class Channel {
     public Channel(String id, String name, ChannelType type, String format,
                    String permission, String shortcut, int radius, boolean isDefault) {
         this(id, name, type, format, permission, shortcut, radius, isDefault,
-                true, false, List.of(), false, ClickEvent.Action.SUGGEST_COMMAND, "", Map.of());
+                true, false, List.of(), false, "suggest_command", "", Map.of());
     }
 
     public String getId() {
@@ -104,7 +102,7 @@ public class Channel {
         return clickEnabled;
     }
 
-    public ClickEvent.Action getClickAction() {
+    public String getClickAction() {
         return clickAction;
     }
 
