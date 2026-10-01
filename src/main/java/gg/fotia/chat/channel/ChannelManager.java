@@ -1,7 +1,6 @@
 package gg.fotia.chat.channel;
 
 import gg.fotia.chat.FotiaChat;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -29,7 +28,6 @@ public class ChannelManager {
 
     private final FotiaChat plugin;
     private FileConfiguration channelsConfig;
-    // 不可变快照 + volatile 整体替换：异步聊天线程读取时不与 reload 竞争
     private volatile Map<String, Channel> channels = Map.of();
     private final Map<UUID, String> playerChannels = new ConcurrentHashMap<>();
     private volatile String defaultChannelId;
@@ -110,7 +108,7 @@ public class ChannelManager {
         }
 
         boolean clickEnabled = false;
-        ClickEvent.Action clickAction = ClickEvent.Action.SUGGEST_COMMAND;
+        String clickAction = "suggest_command";
         String clickValue = "";
         ConfigurationSection clickSection = section.getConfigurationSection("click");
         if (clickSection != null) {
@@ -127,13 +125,20 @@ public class ChannelManager {
                 buildSegmentConfigs(segmentConfigs));
     }
 
-    private ClickEvent.Action parseClickAction(String action) {
-        String safeAction = action == null ? "SUGGEST_COMMAND" : action.toUpperCase();
+    /**
+     * 把配置中的动作名规范化成 Adventure 5.x 接受的字符串形式。
+     * Adventure 的 ClickEvent.action(String) 接受小写、带下划线的名字。
+     */
+    private String parseClickAction(String action) {
+        String safeAction = action == null ? "suggest_command" : action.trim().toLowerCase();
         return switch (safeAction) {
-            case "RUN_COMMAND" -> ClickEvent.Action.RUN_COMMAND;
-            case "OPEN_URL" -> ClickEvent.Action.OPEN_URL;
-            case "COPY_TO_CLIPBOARD" -> ClickEvent.Action.COPY_TO_CLIPBOARD;
-            default -> ClickEvent.Action.SUGGEST_COMMAND;
+            case "run_command" -> "run_command";
+            case "open_url" -> "open_url";
+            case "copy_to_clipboard" -> "copy_to_clipboard";
+            case "change_page" -> "change_page";
+            case "show_dialog" -> "show_dialog";
+            case "custom" -> "custom";
+            default -> "suggest_command";
         };
     }
 
@@ -227,7 +232,6 @@ public class ChannelManager {
         if (channel != null) {
             return channel;
         }
-        // reload 过渡期或默认频道被删除时兜底到第一个频道
         return current.isEmpty() ? null : current.values().iterator().next();
     }
 
@@ -282,7 +286,7 @@ public class ChannelManager {
         private boolean hoverEnabled = false;
         private List<String> hoverText = new ArrayList<>();
         private boolean clickEnabled = false;
-        private ClickEvent.Action clickAction = ClickEvent.Action.SUGGEST_COMMAND;
+        private String clickAction = "suggest_command";
         private String clickValue = "";
     }
 }
