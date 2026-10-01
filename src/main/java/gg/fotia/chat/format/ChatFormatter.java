@@ -232,7 +232,7 @@ public class ChatFormatter {
 
         if (config != null && config.hasClick()) {
             String clickValue = resolvePlainText(config.getClickValue(), sender, channel, messagePlainText);
-            segmentComponent = segmentComponent.clickEvent(ClickEvent.clickEvent(config.getClickAction(), clickValue));
+            segmentComponent = segmentComponent.clickEvent(createClickEvent(config.getClickAction(), clickValue));
         }
 
         return segmentComponent;
@@ -316,11 +316,27 @@ public class ChatFormatter {
 
         if (channel.isClickEnabled() && !channel.getClickValue().isEmpty()) {
             String clickValue = resolvePlainText(channel.getClickValue(), sender, channel, "");
-            ClickEvent clickEvent = ClickEvent.clickEvent(channel.getClickAction(), clickValue);
+            ClickEvent<?> clickEvent = createClickEvent(channel.getClickAction(), clickValue);
             prefixComponent = prefixComponent.clickEvent(clickEvent);
         }
 
         return prefixComponent;
+    }
+
+    /**
+     * 把配置里的字符串动作名转换成 Adventure 的 ClickEvent。
+     * 不依赖 ClickEvent.Action 的任何静态字段，兼容 Adventure 4.x / 5.x。
+     */
+    private static ClickEvent<?> createClickEvent(String action, String value) {
+        if (action == null || action.isBlank()) {
+            return ClickEvent.suggestCommand(value);
+        }
+        return switch (action.trim().toLowerCase()) {
+            case "run_command" -> ClickEvent.runCommand(value);
+            case "open_url" -> ClickEvent.openUrl(value);
+            case "copy_to_clipboard" -> ClickEvent.copyToClipboard(value);
+            default -> ClickEvent.suggestCommand(value);
+        };
     }
 
     private String parsePlaceholdersRecursively(SenderContext sender, String text) {
@@ -487,7 +503,6 @@ public class ChatFormatter {
                     player,
                     player.getUniqueId(),
                     player.getName(),
-                    // 使用真实显示名（昵称插件设置的 displayName），而不是原始用户名
                     PlainTextComponentSerializer.plainText().serialize(player.displayName()),
                     player.getLocation(),
                     Map.of()
